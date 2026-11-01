@@ -195,6 +195,7 @@ fun NumberField(
             focusedBorderColor = accent.face,
             unfocusedBorderColor = C.Line,
             focusedLabelColor = accent.text,
+            unfocusedLabelColor = C.Muted,
             cursorColor = accent.face
         )
     )
@@ -283,7 +284,7 @@ fun DayIcon(part: DayPart) {
                 }
                 DayPart.NIGHT -> {
                     drawCircle(Color(0xFF7B86D9), 8f, Offset(11f, 13f))
-                    drawCircle(Color.White, 7f, Offset(15.5f, 9f))
+                    drawCircle(C.Bg, 7f, Offset(15.5f, 9f))
                 }
             }
         }
@@ -291,12 +292,12 @@ fun DayIcon(part: DayPart) {
 }
 
 @Composable
-fun GreetingHeader(name: String, streak: Int) {
+fun GreetingHeader(name: String, streak: Int, avatar: String, onProfile: () -> Unit) {
     val (text, part) = greeting()
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween
+        horizontalArrangement = Arrangement.spacedBy(10.dp)
     ) {
         Column(Modifier.weight(1f)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -306,6 +307,15 @@ fun GreetingHeader(name: String, streak: Int) {
             Text(name, style = T.display(28), maxLines = 1)
         }
         StreakBadge(streak)
+        SquishButton(
+            onClick = onProfile,
+            background = C.Bg,
+            shape = RoundedCornerShape(50),
+            borderColor = C.Blue,
+            contentPadding = PaddingValues(2.dp)
+        ) {
+            AvatarImage(avatar, Modifier.size(42.dp))
+        }
     }
 }
 
@@ -409,7 +419,7 @@ fun AmountDialog(
     val value = text.toIntOrNull() ?: 0
     AlertDialog(
         onDismissRequest = onDismiss,
-        containerColor = Color.White,
+        containerColor = C.Surface,
         shape = RoundedCornerShape(24.dp),
         title = { Text(title, style = T.display(22)) },
         text = {
@@ -417,7 +427,7 @@ fun AmountDialog(
                 if (step > 0) {
                     Btn3D(
                         onClick = { text = maxOf(step, value - step).toString() },
-                        face = Color.White, edge = accent.line, border = accent.line,
+                        face = C.Surface, edge = accent.line, border = accent.line,
                         modifier = Modifier.size(52.dp, 56.dp), contentPadding = PaddingValues(0.dp)
                     ) { Text("−", style = T.display(24, accent.text)) }
                 }
@@ -428,7 +438,7 @@ fun AmountDialog(
                 if (step > 0) {
                     Btn3D(
                         onClick = { text = (value + step).toString() },
-                        face = Color.White, edge = accent.line, border = accent.line,
+                        face = C.Surface, edge = accent.line, border = accent.line,
                         modifier = Modifier.size(52.dp, 56.dp), contentPadding = PaddingValues(0.dp)
                     ) { Text("+", style = T.display(24, accent.text)) }
                 }
@@ -447,13 +457,13 @@ fun AmountDialog(
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 if (onDelete != null) {
                     Btn3D(
-                        onClick = onDelete, face = Color.White, edge = Color(0xFFF0CFCB),
+                        onClick = onDelete, face = C.Surface, edge = C.RedLine, border = C.RedLine,
                         fill = false, depth = 4.dp,
                         contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp)
                     ) { Text("Delete", style = T.bold(15, C.Red)) }
                 }
                 Btn3D(
-                    onClick = onDismiss, face = Color.White, edge = C.Line,
+                    onClick = onDismiss, face = C.Surface, edge = C.Line,
                     fill = false, depth = 4.dp,
                     contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp)
                 ) { Text("Cancel", style = T.bold(15, C.Muted)) }

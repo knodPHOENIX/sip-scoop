@@ -3,47 +3,81 @@ package com.sipscoop.app.ui
 import android.content.Context
 import android.graphics.Typeface
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 
+/** Whether the app is currently drawn in dark mode. Set by MainActivity. */
+object ThemeState {
+    var dark by mutableStateOf(false)
+}
+
+private fun pick(light: Long, dark: Long): Color = Color(if (ThemeState.dark) dark else light)
+
+/**
+ * Every colour in the app. Colours that change between light and dark mode are
+ * getters, so screens redraw by themselves when the mode changes.
+ */
 object C {
+    // same in both modes
     val Blue = Color(0xFF1E9BF0)
-    val BlueDark = Color(0xFF1477BE)
-    val BlueSoft = Color(0xFFE3F4FE)
-    val BlueCard = Color(0xFFEAF6FE)
-    val BlueLight = Color(0xFF8ED3FA)
-    val BlueLine = Color(0xFFB9D3E6)
     val BlueDeep = Color(0xFF1683D0)
     val Orange = Color(0xFFFF8A3D)
-    val OrangeDark = Color(0xFFD9681F)
-    val OrangeText = Color(0xFFC85E15)
-    val OrangeSoft = Color(0xFFFFEEDF)
-    val OrangeCard = Color(0xFFFFF6EE)
-    val OrangeLine = Color(0xFFEBD9CA)
-    val OrangeTrack = Color(0xFFF3E2D3)
     val Green = Color(0xFF58C443)
-    val GreenDark = Color(0xFF46A332)
-    val GreenText = Color(0xFF2F7A1E)
-    val GreenSoft = Color(0xFFE5F7DF)
     val Yellow = Color(0xFFFFC800)
     val YellowDark = Color(0xFFE5A400)
-    val YellowSoft = Color(0xFFFFF6D6)
-    val YellowLine = Color(0xFFFFE48A)
-    val YellowText = Color(0xFF7A5300)
-    val Ink = Color(0xFF22303E)
-    val Muted = Color(0xFF5B6B7B)
-    val Line = Color(0xFFD6E2EC)
-    val Faint = Color(0xFFF1F6FA)
     val Navy = Color(0xFF17324D)
     val Pink = Color(0xFFFFB3C1)
-    val Red = Color(0xFFC2362B)
-    val Grey = Color(0xFFE5EBF0)
-    val GreyText = Color(0xFF6B7A88)
+    val RedFace = Color(0xFFE5483B)
+
+    // change with the mode
+    val Bg: Color get() = pick(0xFFFFFFFF, 0xFF0F1923)
+    val Surface: Color get() = pick(0xFFFFFFFF, 0xFF17232F)
+    val Ink: Color get() = pick(0xFF22303E, 0xFFEAF2F8)
+    val Muted: Color get() = pick(0xFF5B6B7B, 0xFF9DB0C1)
+    val Line: Color get() = pick(0xFFD6E2EC, 0xFF2C3D4D)
+    val NavLine: Color get() = pick(0xFFE6EDF3, 0xFF22313F)
+    val Faint: Color get() = pick(0xFFF1F6FA, 0xFF1C2A37)
+    val Grey: Color get() = pick(0xFFE5EBF0, 0xFF26333F)
+    val GreyText: Color get() = pick(0xFF6B7A88, 0xFF8596A6)
+
+    val BlueEdge: Color get() = pick(0xFF1477BE, 0xFF0F6CAD)
+    val BlueDark: Color get() = pick(0xFF1477BE, 0xFF7CCBFA) // blue text
+    val BlueSoft: Color get() = pick(0xFFE3F4FE, 0xFF13324A)
+    val BlueCard: Color get() = pick(0xFFEAF6FE, 0xFF142B3E)
+    val BlueLight: Color get() = pick(0xFF8ED3FA, 0xFF3F8FC4)
+    val BlueLine: Color get() = pick(0xFFB9D3E6, 0xFF35546B)
+    val Glass: Color get() = pick(0xFFF1F8FD, 0xFF152536)
+
+    val OrangeDark: Color get() = pick(0xFFD9681F, 0xFFB85512) // orange edge
+    val OrangeText: Color get() = pick(0xFFC85E15, 0xFFFFB27A)
+    val OrangeSoft: Color get() = pick(0xFFFFEEDF, 0xFF3A2618)
+    val OrangeCard: Color get() = pick(0xFFFFF6EE, 0xFF261A12)
+    val OrangeLine: Color get() = pick(0xFFEBD9CA, 0xFF4A3526)
+    val OrangeTrack: Color get() = pick(0xFFF3E2D3, 0xFF3A2A1E)
+
+    val GreenDark: Color get() = pick(0xFF46A332, 0xFF3E8F2C)
+    val GreenText: Color get() = pick(0xFF2F7A1E, 0xFF9BE58A)
+    val GreenSoft: Color get() = pick(0xFFE5F7DF, 0xFF1C361C)
+
+    val YellowSoft: Color get() = pick(0xFFFFF6D6, 0xFF30270C)
+    val YellowLine: Color get() = pick(0xFFFFE48A, 0xFF5E4A12)
+    val YellowText: Color get() = pick(0xFF7A5300, 0xFFFFD95A)
+
+    val Red: Color get() = pick(0xFFC2362B, 0xFFFF7A6E)
+    val RedSoft: Color get() = pick(0xFFFDECEA, 0xFF3A1C1A)
+    val RedLine: Color get() = pick(0xFFF0CFCB, 0xFF5A2A26)
+    val RedEdge: Color get() = pick(0xFFB0301F, 0xFF9E2A1D)
+    val PinkSoft: Color get() = pick(0xFFFCE8F1, 0xFF3A1E2D)
+    val PinkText: Color get() = pick(0xFFB8327A, 0xFFFF9BC8)
 }
 
 /** Colours for one tracker (water or protein). */
@@ -56,8 +90,8 @@ data class Accent(
     val line: Color
 )
 
-val WaterAccent = Accent(C.Blue, C.BlueDark, C.BlueDark, C.BlueSoft, C.BlueCard, C.Line)
-val ProteinAccent = Accent(C.Orange, C.OrangeDark, C.OrangeText, C.OrangeSoft, C.OrangeCard, C.OrangeLine)
+val WaterAccent: Accent get() = Accent(C.Blue, C.BlueEdge, C.BlueDark, C.BlueSoft, C.BlueCard, C.Line)
+val ProteinAccent: Accent get() = Accent(C.Orange, C.OrangeDark, C.OrangeText, C.OrangeSoft, C.OrangeCard, C.OrangeLine)
 
 /**
  * Rounded fonts (Baloo 2 for headings, Nunito for text) are downloaded into
@@ -115,17 +149,24 @@ object T {
 
 @Composable
 fun SipTheme(content: @Composable () -> Unit) {
-    MaterialTheme(
-        colorScheme = lightColorScheme(
-            primary = C.Blue,
-            onPrimary = Color.White,
-            secondary = C.Orange,
-            onSecondary = Color.White,
-            background = Color.White,
-            onBackground = C.Ink,
-            surface = Color.White,
-            onSurface = C.Ink
-        ),
-        content = content
-    )
+    val scheme = if (ThemeState.dark) {
+        darkColorScheme(
+            primary = C.Blue, onPrimary = Color.White,
+            secondary = C.Orange, onSecondary = Color.White,
+            background = C.Bg, onBackground = C.Ink,
+            surface = C.Surface, onSurface = C.Ink,
+            surfaceVariant = C.Faint, onSurfaceVariant = C.Muted,
+            outline = C.Line
+        )
+    } else {
+        lightColorScheme(
+            primary = C.Blue, onPrimary = Color.White,
+            secondary = C.Orange, onSecondary = Color.White,
+            background = C.Bg, onBackground = C.Ink,
+            surface = C.Surface, onSurface = C.Ink,
+            surfaceVariant = C.Faint, onSurfaceVariant = C.Muted,
+            outline = C.Line
+        )
+    }
+    MaterialTheme(colorScheme = scheme, content = content)
 }

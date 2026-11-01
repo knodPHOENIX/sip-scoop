@@ -76,7 +76,7 @@ private val WATER_LABELS = listOf("Glass", "Bottle", "A few sips")
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun TrackerScreen(kind: Kind, state: AppState, update: ((AppState) -> AppState) -> Unit) {
+fun TrackerScreen(kind: Kind, state: AppState, update: ((AppState) -> AppState) -> Unit, onProfile: () -> Unit) {
     val isWater = kind == Kind.WATER
     val accent = if (isWater) WaterAccent else ProteinAccent
     val unit = if (isWater) "ml" else "g"
@@ -94,6 +94,7 @@ fun TrackerScreen(kind: Kind, state: AppState, update: ((AppState) -> AppState) 
     var showCustom by remember { mutableStateOf(false) }
     var showGoal by remember { mutableStateOf(false) }
     var editEntry by remember { mutableStateOf<Entry?>(null) }
+    var showEditAll by remember { mutableStateOf(false) }
 
     fun add(amount: Int) {
         if (amount <= 0) return
@@ -137,7 +138,7 @@ fun TrackerScreen(kind: Kind, state: AppState, update: ((AppState) -> AppState) 
             .padding(horizontal = 20.dp, vertical = 18.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        GreetingHeader(state.firstName, state.streak)
+        GreetingHeader(state.firstName, state.streak, state.avatar, onProfile)
 
         Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             Hopping(bump) {
@@ -152,7 +153,7 @@ fun TrackerScreen(kind: Kind, state: AppState, update: ((AppState) -> AppState) 
                 label = "msg",
                 modifier = Modifier.weight(1f)
             ) { m ->
-                SpeechBubble(m, if (isWater) C.Line else Color(0xFFF1DCCB), Modifier.fillMaxWidth())
+                SpeechBubble(m, if (isWater) C.Line else C.OrangeLine, Modifier.fillMaxWidth())
             }
         }
 
@@ -167,7 +168,10 @@ fun TrackerScreen(kind: Kind, state: AppState, update: ((AppState) -> AppState) 
                     PopLayer(pops, C.BlueDark, Modifier.size(150.dp, 190.dp))
                 }
                 Column {
-                    Pulse(bump) { Text(fmt(shown), style = T.display(44, C.BlueDark)) }
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Pulse(bump) { Text(fmt(shown), style = T.display(42, C.BlueDark)) }
+                        EditTotalButton(accent) { showEditAll = true }
+                    }
                     Text("of ${fmt(goal)} ml", style = T.bold(15, C.Muted))
                     Spacer(Modifier.height(10.dp))
                     DoneBadge(fraction)
@@ -186,10 +190,12 @@ fun TrackerScreen(kind: Kind, state: AppState, update: ((AppState) -> AppState) 
                 ) {
                     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                         Pulse(bump) { Text("$shown", style = T.display(52, C.OrangeText)) }
-                        Text("  / $goal g", style = T.bold(16, C.Muted), modifier = Modifier.weight(1f))
+                        Text("  / $goal g  ", style = T.bold(16, C.Muted))
+                        EditTotalButton(accent) { showEditAll = true }
+                        Spacer(Modifier.weight(1f))
                         Pill("Goal · edit", accent) { showGoal = true }
                     }
-                    Text(if (fraction >= 1f) "Goal reached!" else "$left g to go", style = T.bold(14, Color(0xFF8A5A3A)))
+                    Text(if (fraction >= 1f) "Goal reached!" else "$left g to go", style = T.bold(14, C.OrangeText))
                     ProteinBar(fraction)
                     Milestones(total, goal)
                 }
@@ -237,7 +243,7 @@ fun TrackerScreen(kind: Kind, state: AppState, update: ((AppState) -> AppState) 
                                         val v = quick[idx]
                                         Btn3D(
                                             onClick = { add(v) },
-                                            face = if (primary) accent.face else Color.White,
+                                            face = if (primary) accent.face else C.Surface,
                                             edge = if (primary) accent.edge else accent.line,
                                             minHeight = if (isWater) 62.dp else 50.dp,
                                             horizontalAlignment = if (isWater) Alignment.Start else Alignment.CenterHorizontally,
@@ -275,7 +281,7 @@ fun TrackerScreen(kind: Kind, state: AppState, update: ((AppState) -> AppState) 
                             row.forEach { f ->
                                 Btn3D(
                                     onClick = { add(f.grams) },
-                                    face = Color.White, edge = Color(0xFFE6EDF3), border = Color(0xFFE6EDF3),
+                                    face = C.Surface, edge = C.Line, border = C.Line,
                                     depth = 4.dp, modifier = Modifier.weight(1f),
                                     contentPadding = PaddingValues(horizontal = 12.dp, vertical = 10.dp)
                                 ) {
@@ -367,6 +373,17 @@ fun TrackerScreen(kind: Kind, state: AppState, update: ((AppState) -> AppState) 
             }
         )
     }
+    if (showEditAll) {
+        EditReadingDialog(
+            isWater = isWater,
+            entries = entries,
+            onDismiss = { showEditAll = false },
+            onSave = { list ->
+                update { s -> if (isWater) s.copy(water = list) else s.copy(protein = list) }
+                showEditAll = false
+            }
+        )
+    }
     editEntry?.let { e ->
         AmountDialog(
             title = "Change the ${e.time} entry",
@@ -412,7 +429,7 @@ private fun EntryChip(text: String, accent: Accent, onClick: () -> Unit) {
     Box(Modifier.graphicsLayer { scaleX = appear.value; scaleY = appear.value; alpha = ((appear.value - 0.6f) / 0.4f).coerceIn(0f, 1f) }) {
         SquishButton(
             onClick = onClick,
-            background = if (accent == WaterAccent) C.Faint else Color(0xFFF6F1EC),
+            background = if (accent == WaterAccent) C.Faint else C.OrangeCard,
             shape = RoundedCornerShape(10.dp),
             contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp)
         ) { Text(text, style = T.body(13)) }
@@ -445,7 +462,7 @@ fun InlineNumber(value: Int, unit: String, accent: Accent, onChange: (Int) -> Un
             cursorBrush = SolidColor(accent.face),
             modifier = Modifier
                 .fillMaxWidth()
-                .background(Color.White, RoundedCornerShape(10.dp))
+                .background(C.Surface, RoundedCornerShape(10.dp))
                 .padding(vertical = 4.dp)
         )
         Text(unit, style = T.bold(12, accent.text))
@@ -466,8 +483,18 @@ fun InlineText(value: String, onChange: (String) -> Unit, modifier: Modifier = M
         textStyle = T.body(15),
         cursorBrush = SolidColor(C.Orange),
         modifier = modifier
-            .background(Color.White, RoundedCornerShape(12.dp))
+            .background(C.Surface, RoundedCornerShape(12.dp))
             .border(2.dp, C.OrangeLine, RoundedCornerShape(12.dp))
             .padding(horizontal = 12.dp, vertical = 12.dp)
     )
+}
+
+@Composable
+private fun EditTotalButton(accent: Accent, onClick: () -> Unit) {
+    Btn3D(
+        onClick = onClick,
+        face = C.Surface, edge = accent.line, border = accent.line,
+        fill = false, radius = 12.dp, depth = 4.dp,
+        contentPadding = PaddingValues(7.dp)
+    ) { LineIcon(Ic.PENCIL, accent.text, 18.dp) }
 }

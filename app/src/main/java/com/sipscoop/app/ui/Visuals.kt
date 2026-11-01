@@ -78,7 +78,7 @@ fun WaterGlass(fraction: Float, modifier: Modifier = Modifier) {
             val inner = Path().apply {
                 moveTo(18f, 13f); lineTo(142f, 13f); lineTo(128f, 189f); lineTo(32f, 189f); close()
             }
-            drawPath(outer, Color(0xFFF1F8FD))
+            drawPath(outer, C.Glass)
             if (level > 0.003f) {
                 clipPath(inner) {
                     val base = 14f + (1f - level) * 176f
@@ -159,8 +159,8 @@ private fun MilestoneDot(done: Boolean, next: Boolean, trophy: Boolean) {
     val bg by animateColorAsState(
         targetValue = when {
             done -> C.Green
-            next -> Color.White
-            else -> Color(0xFFECE4DC)
+            next -> C.Surface
+            else -> C.OrangeTrack
         },
         animationSpec = tween(400),
         label = "dot"
@@ -202,9 +202,9 @@ private fun MilestoneDot(done: Boolean, next: Boolean, trophy: Boolean) {
                                 moveTo(12f, 14f); lineTo(12f, 17f)
                                 moveTo(8f, 20f); lineTo(16f, 20f)
                             }
-                            drawPath(cup, Color(0xFF8C7F73), style = Stroke(width = 2.2f, cap = StrokeCap.Round, join = StrokeJoin.Round))
+                            drawPath(cup, C.Muted, style = Stroke(width = 2.2f, cap = StrokeCap.Round, join = StrokeJoin.Round))
                         }
-                        else -> drawCircle(Color(0xFFCBBFB4), 5f, Offset(12f, 12f))
+                        else -> drawCircle(C.Muted.copy(alpha = 0.5f), 5f, Offset(12f, 12f))
                     }
                 }
             }

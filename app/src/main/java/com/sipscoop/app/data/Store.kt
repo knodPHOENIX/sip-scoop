@@ -11,6 +11,15 @@ data class Entry(val id: Long, val time: String, val amount: Int)
 
 data class Food(val name: String, val grams: Int)
 
+/** What happened on one finished day. Older saves only know [met]. */
+data class DayRecord(
+    val water: Int = 0,
+    val protein: Int = 0,
+    val waterGoal: Int = 0,
+    val proteinGoal: Int = 0,
+    val met: Boolean = false
+)
+
 val DEFAULT_FOODS = listOf(
     Food("Boiled egg", 6),
     Food("Paneer 100 g", 18),
@@ -18,10 +27,14 @@ val DEFAULT_FOODS = listOf(
     Food("Whey scoop", 24)
 )
 
+val AVATAR_IDS = listOf("m1", "m2", "m3", "f1", "f2", "f3")
+
 data class AppState(
     val onboarded: Boolean = false,
     val name: String = "",
     val age: Int = 22,
+    val avatar: String = "m1",
+    val since: String = LocalDate.now().toString(),
     val waterGoal: Int = 3000,
     val proteinGoal: Int = 100,
     val waterQuick: List<Int> = listOf(250, 500, 100),
@@ -30,8 +43,15 @@ data class AppState(
     val date: String = LocalDate.now().toString(),
     val water: List<Entry> = emptyList(),
     val protein: List<Entry> = emptyList(),
-    /** date -> true when both goals were reached that day */
-    val history: Map<String, Boolean> = emptyMap()
+    val history: Map<String, DayRecord> = emptyMap(),
+    /** "light", "dark" or "system" */
+    val themeMode: String = "system",
+    val remindWater: Boolean = true,
+    val remindEveryHours: Int = 2,
+    val quietStart: Int = 22,
+    val quietEnd: Int = 7,
+    val remindProtein: Boolean = true,
+    val streakAlert: Boolean = false
 ) {
     val waterTotal: Int get() = water.sumOf { it.amount }
     val proteinTotal: Int get() = protein.sumOf { it.amount }
@@ -42,7 +62,7 @@ data class AppState(
         get() {
             var count = if (todayMet) 1 else 0
             var day = runCatching { LocalDate.parse(date) }.getOrElse { LocalDate.now() }.minusDays(1)
-            while (history[day.toString()] == true) {
+            while (history[day.toString()]?.met == true) {
                 count++
                 day = day.minusDays(1)
             }
@@ -58,6 +78,8 @@ fun AppState.addWater(ml: Int): AppState =
 
 fun AppState.addProtein(g: Int): AppState =
     if (g <= 0) this else copy(protein = protein + Store.newEntry(g))
+
+fun AppState.resetToday(): AppState = copy(water = emptyList(), protein = emptyList())
 
 object Store {
     private const val PREFS = "sip_scoop"
@@ -92,11 +114,23 @@ object Store {
         return next
     }
 
+    /** Removes everything saved on this phone. */
+    fun clear(context: Context) {
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().clear().commit()
+    }
+
     /** Starts a fresh day when the date has changed, keeping a record of the old one. */
     private fun rollOver(state: AppState): AppState {
         val today = LocalDate.now().toString()
         if (state.date == today) return state
-        val history = (state.history + (state.date to state.todayMet))
+        val record = DayRecord(
+            water = state.waterTotal,
+            protein = state.proteinTotal,
+            waterGoal = state.waterGoal,
+            proteinGoal = state.proteinGoal,
+            met = state.todayMet
+        )
+        val history = (state.history + (state.date to record))
             .toSortedMap()
             .entries
             .toList()
@@ -128,11 +162,20 @@ object Store {
         val foods = JSONArray().apply {
             s.foods.forEach { put(JSONObject().put("n", it.name).put("g", it.grams)) }
         }
-        val hist = JSONObject().apply { s.history.forEach { (k, v) -> put(k, v) } }
+        val hist = JSONObject()
+        s.history.forEach { (day, r) ->
+            hist.put(
+                day,
+                JSONObject().put("w", r.water).put("p", r.protein)
+                    .put("wg", r.waterGoal).put("pg", r.proteinGoal).put("m", r.met)
+            )
+        }
         return JSONObject()
             .put("onboarded", s.onboarded)
             .put("name", s.name)
             .put("age", s.age)
+            .put("avatar", s.avatar)
+            .put("since", s.since)
             .put("waterGoal", s.waterGoal)
             .put("proteinGoal", s.proteinGoal)
             .put("waterQuick", intsToJson(s.waterQuick))
@@ -142,6 +185,13 @@ object Store {
             .put("water", entriesToJson(s.water))
             .put("protein", entriesToJson(s.protein))
             .put("history", hist)
+            .put("themeMode", s.themeMode)
+            .put("remindWater", s.remindWater)
+            .put("remindEveryHours", s.remindEveryHours)
+            .put("quietStart", s.quietStart)
+            .put("quietEnd", s.quietEnd)
+            .put("remindProtein", s.remindProtein)
+            .put("streakAlert", s.streakAlert)
     }
 
     private fun fromJson(o: JSONObject): AppState {
@@ -153,18 +203,27 @@ object Store {
                 Food(f.optString("n"), f.optInt("g"))
             }
         val histObj = o.optJSONObject("history")
-        val history = mutableMapOf<String, Boolean>()
+        val history = mutableMapOf<String, DayRecord>()
         if (histObj != null) {
             val keys = histObj.keys()
             while (keys.hasNext()) {
                 val k = keys.next()
-                history[k] = histObj.optBoolean(k)
+                val rec = histObj.optJSONObject(k)
+                history[k] = if (rec != null) {
+                    DayRecord(rec.optInt("w"), rec.optInt("p"), rec.optInt("wg"), rec.optInt("pg"), rec.optBoolean("m"))
+                } else {
+                    // saves from version 1 only stored whether the day was a success
+                    DayRecord(met = histObj.optBoolean(k))
+                }
             }
         }
+        val avatar = o.optString("avatar", def.avatar).takeIf { it in AVATAR_IDS } ?: def.avatar
         return AppState(
             onboarded = o.optBoolean("onboarded", false),
             name = o.optString("name", ""),
             age = o.optInt("age", def.age),
+            avatar = avatar,
+            since = o.optString("since", o.optString("date", def.since)),
             waterGoal = o.optInt("waterGoal", def.waterGoal),
             proteinGoal = o.optInt("proteinGoal", def.proteinGoal),
             waterQuick = intsFromJson(o.optJSONArray("waterQuick"), def.waterQuick),
@@ -173,7 +232,14 @@ object Store {
             date = o.optString("date", def.date),
             water = entriesFromJson(o.optJSONArray("water")),
             protein = entriesFromJson(o.optJSONArray("protein")),
-            history = history
+            history = history,
+            themeMode = o.optString("themeMode", def.themeMode),
+            remindWater = o.optBoolean("remindWater", def.remindWater),
+            remindEveryHours = o.optInt("remindEveryHours", def.remindEveryHours).coerceIn(1, 3),
+            quietStart = o.optInt("quietStart", def.quietStart),
+            quietEnd = o.optInt("quietEnd", def.quietEnd),
+            remindProtein = o.optBoolean("remindProtein", def.remindProtein),
+            streakAlert = o.optBoolean("streakAlert", def.streakAlert)
         )
     }
 }

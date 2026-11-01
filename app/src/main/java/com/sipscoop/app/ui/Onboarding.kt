@@ -60,12 +60,13 @@ import com.sipscoop.app.data.AppState
 
 /** First-time setup: name, age, then daily goals. */
 @Composable
-fun Onboarding(initial: AppState, onFinish: (name: String, age: Int, water: Int, protein: Int) -> Unit) {
+fun Onboarding(initial: AppState, onFinish: (name: String, age: Int, avatar: String, water: Int, protein: Int) -> Unit) {
     var step by remember { mutableIntStateOf(0) }
     var name by remember { mutableStateOf(initial.name) }
     var age by remember { mutableStateOf(initial.age.toString()) }
     var water by remember { mutableStateOf(initial.waterGoal.toString()) }
     var protein by remember { mutableStateOf(initial.proteinGoal.toString()) }
+    var avatar by remember { mutableStateOf(initial.avatar) }
 
     val ageN = age.toIntOrNull() ?: 0
     val waterN = water.toIntOrNull() ?: 0
@@ -74,20 +75,21 @@ fun Onboarding(initial: AppState, onFinish: (name: String, age: Int, water: Int,
     val canGo = when (step) {
         0 -> name.isNotBlank()
         1 -> ageN in 5..110
-        2 -> waterN in 250..10000 && proteinN in 5..500
+        2 -> true
+        3 -> waterN in 250..10000 && proteinN in 5..500
         else -> true
     }
-    val progress by animateFloatAsState(step / 3f, tween(600, easing = FastOutSlowInEasing), label = "progress")
+    val progress by animateFloatAsState(step / 4f, tween(600, easing = FastOutSlowInEasing), label = "progress")
 
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.White)
+            .background(C.Bg)
             .padding(horizontal = 20.dp, vertical = 16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         Row(Modifier.fillMaxWidth().height(44.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            AnimatedVisibility(visible = step in 1..2, enter = fadeIn() + scaleIn(), exit = fadeOut() + scaleOut()) {
+            AnimatedVisibility(visible = step in 1..3, enter = fadeIn() + scaleIn(), exit = fadeOut() + scaleOut()) {
                 SquishButton(onClick = { step = maxOf(0, step - 1) }, background = C.Faint, shape = RoundedCornerShape(12.dp), contentPadding = PaddingValues(10.dp)) {
                     Canvas(Modifier.size(20.dp)) {
                         inViewBox(0f, 0f, 24f, 24f) {
@@ -102,7 +104,7 @@ fun Onboarding(initial: AppState, onFinish: (name: String, age: Int, water: Int,
                     .weight(1f)
                     .height(16.dp)
                     .clip(CircleShape)
-                    .background(Color(0xFFE9EEF2))
+                    .background(C.NavLine)
             ) {
                 if (progress > 0.01f) {
                     Box(
@@ -147,7 +149,7 @@ fun Onboarding(initial: AppState, onFinish: (name: String, age: Int, water: Int,
                             shape = RoundedCornerShape(16.dp),
                             colors = OutlinedTextFieldDefaults.colors(
                                 focusedBorderColor = C.Blue, unfocusedBorderColor = C.Line,
-                                focusedLabelColor = C.BlueDark, cursorColor = C.Blue
+                                focusedLabelColor = C.BlueDark, unfocusedLabelColor = C.Muted, cursorColor = C.Blue
                             ),
                             modifier = Modifier.fillMaxWidth()
                         )
@@ -160,10 +162,21 @@ fun Onboarding(initial: AppState, onFinish: (name: String, age: Int, water: Int,
                             onChange = { age = it },
                             onMinus = { age = maxOf(5, ageN - 1).toString() },
                             onPlus = { age = minOf(110, ageN + 1).toString() },
-                            background = Color(0xFFF2F8FC)
+                            background = C.BlueCard
                         )
                     }
                     2 -> {
+                        Spacer(Modifier.height(8.dp))
+                        Asking("Pick your character, $firstName! It shows on your profile.", small = true)
+                        AvatarGrid(avatar, { avatar = it })
+                        Text(
+                            "You can change it later in your profile.",
+                            style = T.body(14, C.Muted),
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+                    3 -> {
                         Asking("Last step! Set your daily goals. You can change them anytime.", small = true)
                         Column(
                             Modifier
@@ -182,7 +195,7 @@ fun Onboarding(initial: AppState, onFinish: (name: String, age: Int, water: Int,
                             )
                             Text(
                                 "That's about ${(waterN + 125) / 250} glasses of 250 ml",
-                                style = T.body(14, Color(0xFF3F6A8C)),
+                                style = T.body(14, C.BlueDark),
                                 textAlign = TextAlign.Center,
                                 modifier = Modifier.fillMaxWidth()
                             )
@@ -204,17 +217,17 @@ fun Onboarding(initial: AppState, onFinish: (name: String, age: Int, water: Int,
                             )
                         }
                     }
-                    else -> AllSet(firstName, waterN, proteinN)
+                    else -> AllSet(firstName, avatar, waterN, proteinN)
                 }
             }
         }
 
         Btn3D(
             onClick = {
-                if (step < 3) {
+                if (step < 4) {
                     if (canGo) step++
                 } else {
-                    onFinish(name.trim(), ageN, waterN, proteinN)
+                    onFinish(name.trim(), ageN, avatar, waterN, proteinN)
                 }
             },
             face = if (canGo) C.Green else C.Grey,
@@ -223,7 +236,7 @@ fun Onboarding(initial: AppState, onFinish: (name: String, age: Int, water: Int,
             depth = 6.dp,
             contentPadding = PaddingValues(vertical = 14.dp)
         ) {
-            Text(if (step < 3) "Continue" else "Start tracking", style = T.display(20, if (canGo) Color.White else C.GreyText))
+            Text(if (step < 4) "Continue" else "Start tracking", style = T.display(20, if (canGo) Color.White else C.GreyText))
         }
     }
 }
@@ -258,7 +271,7 @@ private fun Stepper(
         horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         Btn3D(
-            onClick = onMinus, face = Color.White, edge = accent.line, border = accent.line,
+            onClick = onMinus, face = C.Surface, edge = accent.line, border = accent.line,
             modifier = Modifier.size(54.dp, 58.dp), contentPadding = PaddingValues(0.dp)
         ) { Text("−", style = T.display(26, accent.text)) }
         NumberField(
@@ -266,14 +279,14 @@ private fun Stepper(
             accent = accent, modifier = Modifier.weight(1f)
         )
         Btn3D(
-            onClick = onPlus, face = Color.White, edge = accent.line, border = accent.line,
+            onClick = onPlus, face = C.Surface, edge = accent.line, border = accent.line,
             modifier = Modifier.size(54.dp, 58.dp), contentPadding = PaddingValues(0.dp)
         ) { Text("+", style = T.display(26, accent.text)) }
     }
 }
 
 @Composable
-private fun AllSet(firstName: String, water: Int, protein: Int) {
+private fun AllSet(firstName: String, avatar: String, water: Int, protein: Int) {
     val inf = rememberInfiniteTransition(label = "confetti")
     val fall by inf.animateFloat(0f, 1f, infiniteRepeatable(tween(2800, easing = LinearEasing)), label = "fall")
     Box(Modifier.fillMaxWidth().height(520.dp)) {
@@ -295,7 +308,10 @@ private fun AllSet(firstName: String, water: Int, protein: Int) {
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(20.dp, Alignment.CenterVertically)
         ) {
-            Hopping(1) { MascotPair(Modifier.size(200.dp, 190.dp), dripColor = C.Blue, celebrate = true) }
+            Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Hopping(1) { AvatarImage(avatar, Modifier.size(110.dp)) }
+                Hopping(1) { MascotPair(Modifier.size(150.dp, 142.dp), dripColor = C.Blue, celebrate = true) }
+            }
             Text("You're all set, $firstName!", style = T.display(32), textAlign = TextAlign.Center)
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 Text(

@@ -1,5 +1,6 @@
 package com.sipscoop.app.ui
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.Animatable
@@ -54,7 +55,11 @@ import androidx.compose.ui.unit.dp
 import com.sipscoop.app.data.AppState
 
 @Composable
-fun AppRoot(state: AppState, update: ((AppState) -> AppState) -> Unit) {
+fun AppRoot(
+    state: AppState,
+    update: ((AppState) -> AppState) -> Unit,
+    onNeedNotificationPermission: () -> Unit
+) {
     var splashDone by rememberSaveable { mutableStateOf(false) }
     val screen = when {
         !splashDone -> 0
@@ -68,85 +73,110 @@ fun AppRoot(state: AppState, update: ((AppState) -> AppState) -> Unit) {
     ) { s ->
         when (s) {
             0 -> Splash { splashDone = true }
-            1 -> Box(Modifier.fillMaxSize().background(Color.White).windowInsetsPadding(WindowInsets.safeDrawing)) {
-                Onboarding(state) { name, age, water, protein ->
-                    update { it.copy(onboarded = true, name = name, age = age, waterGoal = water, proteinGoal = protein) }
+            1 -> Box(Modifier.fillMaxSize().background(C.Bg).windowInsetsPadding(WindowInsets.safeDrawing)) {
+                Onboarding(state) { name, age, avatar, water, protein ->
+                    update {
+                        it.copy(
+                            onboarded = true, name = name, age = age, avatar = avatar,
+                            waterGoal = water, proteinGoal = protein, since = it.date
+                        )
+                    }
                 }
             }
-            else -> MainScreen(state, update)
+            else -> MainScreen(state, update, onNeedNotificationPermission)
         }
     }
 }
 
+private const val HOME = 0
+private const val PROFILE = 1
+private const val SETTINGS = 2
+private const val HISTORY = 3
+
 @Composable
-fun MainScreen(state: AppState, update: ((AppState) -> AppState) -> Unit) {
+fun MainScreen(
+    state: AppState,
+    update: ((AppState) -> AppState) -> Unit,
+    onNeedNotificationPermission: () -> Unit
+) {
     var tab by rememberSaveable { mutableIntStateOf(0) }
-    Column(
+    var page by rememberSaveable { mutableIntStateOf(HOME) }
+
+    BackHandler(enabled = page != HOME) {
+        page = if (page == PROFILE) HOME else PROFILE
+    }
+
+    Box(
         Modifier
             .fillMaxSize()
-            .background(Color.White)
+            .background(C.Bg)
             .windowInsetsPadding(WindowInsets.safeDrawing)
     ) {
-        Box(Modifier.weight(1f)) {
-            AnimatedContent(
-                targetState = tab,
-                transitionSpec = {
-                    val forward = targetState > initialState
-                    (slideInHorizontally(tween(380)) { w -> if (forward) w / 4 else -w / 4 } + fadeIn(tween(380))) togetherWith
-                        (slideOutHorizontally(tween(280)) { w -> if (forward) -w / 4 else w / 4 } + fadeOut(tween(200)))
-                },
-                label = "tabs"
-            ) { t ->
-                TrackerScreen(if (t == 0) Kind.WATER else Kind.PROTEIN, state, update)
+        AnimatedContent(
+            targetState = page,
+            transitionSpec = {
+                val forward = targetState > initialState
+                (slideInHorizontally(tween(380)) { w -> if (forward) w / 3 else -w / 3 } + fadeIn(tween(380))) togetherWith
+                    (slideOutHorizontally(tween(280)) { w -> if (forward) -w / 3 else w / 3 } + fadeOut(tween(200)))
+            },
+            label = "pages"
+        ) { p ->
+            when (p) {
+                PROFILE -> ProfileScreen(
+                    state, update,
+                    onBack = { page = HOME },
+                    onSettings = { page = SETTINGS },
+                    onHistory = { page = HISTORY }
+                )
+                SETTINGS -> SettingsScreen(state, update, onBack = { page = PROFILE }, onNeedNotificationPermission = onNeedNotificationPermission)
+                HISTORY -> HistoryScreen(state, onBack = { page = PROFILE })
+                else -> Column(Modifier.fillMaxSize().background(C.Bg)) {
+                    Box(Modifier.weight(1f)) {
+                        AnimatedContent(
+                            targetState = tab,
+                            transitionSpec = {
+                                val forward = targetState > initialState
+                                (slideInHorizontally(tween(380)) { w -> if (forward) w / 4 else -w / 4 } + fadeIn(tween(380))) togetherWith
+                                    (slideOutHorizontally(tween(280)) { w -> if (forward) -w / 4 else w / 4 } + fadeOut(tween(200)))
+                            },
+                            label = "tabs"
+                        ) { t ->
+                            TrackerScreen(if (t == 0) Kind.WATER else Kind.PROTEIN, state, update, onProfile = { page = PROFILE })
+                        }
+                    }
+                    Box(Modifier.fillMaxWidth().height(2.dp).background(C.NavLine))
+                    Row(
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 20.dp, vertical = 12.dp),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        NavTab("Water", tab == 0, WaterAccent, water = true, modifier = Modifier.weight(1f)) { tab = 0 }
+                        NavTab("Protein", tab == 1, ProteinAccent, water = false, modifier = Modifier.weight(1f)) { tab = 1 }
+                    }
+                }
             }
-        }
-        Box(Modifier.fillMaxWidth().height(2.dp).background(Color(0xFFE6EDF3)))
-        Row(
-            Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 20.dp, vertical = 12.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            NavTab("Water", tab == 0, WaterAccent, water = true, modifier = Modifier.weight(1f)) { tab = 0 }
-            NavTab("Protein", tab == 1, ProteinAccent, water = false, modifier = Modifier.weight(1f)) { tab = 1 }
         }
     }
 }
 
+/** Both tabs always wear their own colour; the open one is filled in solid. */
 @Composable
 private fun NavTab(label: String, selected: Boolean, accent: Accent, water: Boolean, modifier: Modifier, onClick: () -> Unit) {
-    val bg by animateColorAsState(if (selected) accent.soft else Color.White, tween(250), label = "tabBg")
-    val border by animateColorAsState(if (selected) accent.face.copy(alpha = 0.5f) else Color.White, tween(250), label = "tabBorder")
-    val textColor by animateColorAsState(if (selected) accent.text else C.Muted, tween(250), label = "tabText")
-    val iconColor by animateColorAsState(if (selected) accent.face else Color(0xFFAFC0CE), tween(250), label = "tabIcon")
-    SquishButton(
+    val face by animateColorAsState(if (selected) accent.face else accent.soft, tween(250), label = "tabFace")
+    val edge by animateColorAsState(if (selected) accent.edge else accent.line, tween(250), label = "tabEdge")
+    val textColor by animateColorAsState(if (selected) Color.White else accent.text, tween(250), label = "tabText")
+    val iconColor by animateColorAsState(if (selected) Color.White else accent.face, tween(250), label = "tabIcon")
+    Btn3D(
         onClick = onClick,
-        background = bg,
+        face = face,
+        edge = edge,
         modifier = modifier,
-        shape = RoundedCornerShape(14.dp),
-        borderColor = border,
+        depth = 5.dp,
         contentPadding = PaddingValues(10.dp)
     ) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Canvas(Modifier.size(22.dp)) {
-                inViewBox(0f, 0f, 24f, 24f) {
-                    val p = Path().apply {
-                        if (water) {
-                            moveTo(12f, 3f)
-                            cubicTo(12f, 3f, 5f, 11f, 5f, 15f)
-                            arcTo(Rect(5f, 8f, 19f, 22f), 180f, -180f, false)
-                            cubicTo(19f, 11f, 12f, 3f, 12f, 3f)
-                        } else {
-                            moveTo(12f, 3f)
-                            cubicTo(8.5f, 3f, 6f, 9f, 6f, 13.5f)
-                            arcTo(Rect(6f, 7.5f, 18f, 19.5f), 180f, -180f, false)
-                            cubicTo(18f, 9f, 15.5f, 3f, 12f, 3f)
-                        }
-                        close()
-                    }
-                    drawPath(p, iconColor)
-                }
-            }
+            FillIcon(if (water) Ic.DROP else Ic.EGG, iconColor, 22.dp)
             Text(label, style = T.bold(15, textColor))
         }
     }
