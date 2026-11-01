@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Drip the water drop with the orange egg buddy, scaled from a 512 artboard
+     into the centre safe zone of the 108dp adaptive icon. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <group
+        android:scaleX="0.171"
+        android:scaleY="0.171"
+        android:translateX="7.1"
+        android:translateY="12.7">
+        <path
+            android:fillColor="#FFFFFF"
+            android:pathData="M226,66 C226,66 112,200 112,292 A114,114 0 0,0 340,292 C340,200 226,66 226,66 Z" />
+        <path
+            android:fillColor="#17324D"
+            android:pathData="M173,290 a19,19 0 1,0 38,0 a19,19 0 1,0 -38,0" />
+        <path
+            android:fillColor="#17324D"
+            android:pathData="M243,290 a19,19 0 1,0 38,0 a19,19 0 1,0 -38,0" />
+        <path
+            android:fillColor="#FFFFFF"
+            android:pathData="M193,282 a6,6 0 1,0 12,0 a6,6 0 1,0 -12,0" />
+        <path
+            android:fillColor="#FFFFFF"
+            android:pathData="M263,282 a6,6 0 1,0 12,0 a6,6 0 1,0 -12,0" />
+        <path
+            android:fillColor="#FFB3C1"
+            android:pathData="M153,326 a15,9 0 1,0 30,0 a15,9 0 1,0 -30,0" />
+        <path
+            android:fillColor="#FFB3C1"
+            android:pathData="M271,326 a15,9 0 1,0 30,0 a15,9 0 1,0 -30,0" />
+        <path
+            android:strokeColor="#17324D"
+            android:strokeWidth="9"
+            android:strokeLineCap="round"
+            android:pathData="M206,326 Q227,350 248,326" />
+        <path
+            android:fillColor="#FF8A3D"
+            android:strokeColor="#FFFFFF"
+            android:strokeWidth="10"
+            android:pathData="M384,282 C356,282 336,332 336,364 A48,48 0 0,0 432,364 C432,332 412,282 384,282 Z" />
+        <path
+            android:fillColor="#17324D"
+            android:pathData="M363,352 a7,7 0 1,0 14,0 a7,7 0 1,0 -14,0" />
+        <path
+            android:fillColor="#17324D"
+            android:pathData="M391,352 a7,7 0 1,0 14,0 a7,7 0 1,0 -14,0" />
+        <path
+            android:strokeColor="#17324D"
+            android:strokeWidth="5"
+            android:strokeLineCap="round"
+            android:pathData="M374,372 Q384,381 394,372" />
+    </group>
+</vector>

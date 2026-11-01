@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Sip &amp; Scoop</string>
+    <string name="widget_wide_name">Sip &amp; Scoop · wide</string>
+    <string name="widget_compact_name">Sip &amp; Scoop · compact</string>
+    <string name="widget_wide_desc">Log water and protein with one tap</string>
+    <string name="widget_compact_desc">Small one-tap logger</string>
+    <string name="water">Water</string>
+    <string name="protein">Protein</string>
+</resources>

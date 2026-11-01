@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="splash_blue">#1E9BF0</color>
+    <color name="ink">#22303E</color>
+    <color name="muted">#5B6B7B</color>
+    <color name="blue_text">#1477BE</color>
+    <color name="orange_text">#B85512</color>
+</resources>
