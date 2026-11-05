@@ -15,6 +15,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.sipscoop.app.data.AppState
 import com.sipscoop.app.data.Store
+import com.sipscoop.app.data.withinDailyLimits
 import com.sipscoop.app.notify.Reminders
 import com.sipscoop.app.ui.AppRoot
 import com.sipscoop.app.ui.Fonts
@@ -56,7 +57,7 @@ class MainActivity : ComponentActivity() {
 
     private fun update(change: (AppState) -> AppState) {
         val before = appState
-        val next = change(before)
+        val next = change(before).withinDailyLimits()
         appState = next
         if (!next.onboarded && before.onboarded) {
             // logged out: wipe everything stored, then keep only the fresh state

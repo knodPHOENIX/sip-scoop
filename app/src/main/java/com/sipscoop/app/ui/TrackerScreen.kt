@@ -1,6 +1,7 @@
 package com.sipscoop.app.ui
 
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.RepeatMode
@@ -62,6 +63,8 @@ import com.sipscoop.app.data.AppState
 import com.sipscoop.app.data.Entry
 import com.sipscoop.app.data.addProtein
 import com.sipscoop.app.data.addWater
+import com.sipscoop.app.data.proteinRoom
+import com.sipscoop.app.data.waterRoom
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.util.Locale
@@ -99,13 +102,34 @@ fun TrackerScreen(kind: Kind, state: AppState, update: ((AppState) -> AppState) 
     var showGoal by remember { mutableStateOf(false) }
     var editEntry by remember { mutableStateOf<Entry?>(null) }
     var showEditAll by remember { mutableStateOf(false) }
+    var limitMsg by remember { mutableStateOf<String?>(null) }
+    var limitKey by remember { mutableIntStateOf(0) }
+    val room = if (isWater) state.waterRoom else state.proteinRoom
+    val dayMaxText = if (isWater) "10,000 ml" else "400 g"
+
+    LaunchedEffect(limitKey) {
+        if (limitMsg != null) {
+            delay(3500)
+            limitMsg = null
+        }
+    }
 
     fun add(amount: Int) {
         if (amount <= 0) return
-        update { if (isWater) it.addWater(amount) else it.addProtein(amount) }
+        if (room <= 0) {
+            limitMsg = "You've reached today's limit of $dayMaxText. Nothing more can be added today."
+            limitKey++
+            return
+        }
+        val actual = minOf(amount, room)
+        update { if (isWater) it.addWater(actual) else it.addProtein(actual) }
+        if (actual < amount) {
+            limitMsg = "Only $actual $unit added. $dayMaxText is the most you can log in a day."
+            limitKey++
+        }
         bump++
         val id = System.nanoTime()
-        pops.add(Pop(id, "+$amount $unit"))
+        pops.add(Pop(id, "+$actual $unit"))
         scope.launch {
             delay(1000)
             pops.removeAll { it.id == id }
@@ -209,6 +233,10 @@ fun TrackerScreen(kind: Kind, state: AppState, update: ((AppState) -> AppState) 
                         .height(70.dp)
                 )
             }
+        }
+
+        AnimatedVisibility(visible = limitMsg != null) {
+            NoteBox(limitMsg ?: "", warning = true)
         }
 
         // Quick add
@@ -358,8 +386,9 @@ fun TrackerScreen(kind: Kind, state: AppState, update: ((AppState) -> AppState) 
         AmountDialog(
             title = if (isWater) "Add water" else "Add protein",
             initial = 0, unit = unit, accent = accent, confirmLabel = "Add",
-            max = Limits.max(isWater),
-            maxNote = if (isWater) "You can add up to 10,000 ml at a time." else "You can add up to 400 g at a time.",
+            max = maxOf(1, room),
+            maxNote = if (room <= 0) "You've reached today's limit of $dayMaxText."
+            else "You can add ${fmt(room)} $unit more today. $dayMaxText is the daily limit.",
             onDismiss = { showCustom = false },
             onConfirm = { v ->
                 add(v)
@@ -397,7 +426,8 @@ fun TrackerScreen(kind: Kind, state: AppState, update: ((AppState) -> AppState) 
         AmountDialog(
             title = "Change the ${e.time} entry",
             initial = e.amount, unit = unit, accent = accent, confirmLabel = "Save",
-            max = Limits.max(isWater),
+            max = room + e.amount,
+            maxNote = "$dayMaxText is the most you can log in a day.",
             onDismiss = { editEntry = null },
             onConfirm = { v ->
                 update { s ->

@@ -166,7 +166,7 @@ fun EditReadingDialog(
                                 if (totalText.isEmpty()) Text(fmt(draftSum), style = T.display(18, C.Muted.copy(alpha = 0.6f)))
                                 BasicTextField(
                                     value = totalText,
-                                    onValueChange = { v -> totalText = clampText(v, Limits.max(isWater) * 20) },
+                                    onValueChange = { v -> totalText = clampText(v, Limits.max(isWater)) },
                                     singleLine = true,
                                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                                     textStyle = T.display(18),
@@ -177,6 +177,13 @@ fun EditReadingDialog(
                             Text(unit, style = T.bold(13, C.Muted))
                         }
                     }
+                }
+                if (draftSum > Limits.max(isWater) && totalText.isEmpty()) {
+                    NoteBox(
+                        if (isWater) "That's over the daily limit. Only 10,000 ml will be kept."
+                        else "That's over the daily limit. Only 400 g will be kept.",
+                        warning = true
+                    )
                 }
                 if (totalText.isNotEmpty()) {
                     Text("Today's entries will be replaced by this one total.", style = T.body(13, C.Muted))

@@ -73,11 +73,43 @@ data class AppState(
         get() = name.trim().split(" ").firstOrNull()?.takeIf { it.isNotBlank() } ?: "friend"
 }
 
-fun AppState.addWater(ml: Int): AppState =
-    if (ml <= 0) this else copy(water = water + Store.newEntry(ml))
+/** The most anyone can log in one day. */
+const val WATER_DAY_MAX = 10000
+const val PROTEIN_DAY_MAX = 400
 
-fun AppState.addProtein(g: Int): AppState =
-    if (g <= 0) this else copy(protein = protein + Store.newEntry(g))
+val AppState.waterRoom: Int get() = (WATER_DAY_MAX - waterTotal).coerceAtLeast(0)
+val AppState.proteinRoom: Int get() = (PROTEIN_DAY_MAX - proteinTotal).coerceAtLeast(0)
+
+/** Adds water, but never past the daily maximum (only the part that fits is logged). */
+fun AppState.addWater(ml: Int): AppState {
+    val add = minOf(ml, waterRoom)
+    return if (add <= 0) this else copy(water = water + Store.newEntry(add))
+}
+
+fun AppState.addProtein(g: Int): AppState {
+    val add = minOf(g, proteinRoom)
+    return if (add <= 0) this else copy(protein = protein + Store.newEntry(add))
+}
+
+/** Trims a list of entries from the newest end so its total stays within [max]. */
+fun capEntries(list: List<Entry>, max: Int): List<Entry> {
+    var left = max
+    val out = ArrayList<Entry>()
+    for (e in list) {
+        if (left <= 0) break
+        val a = minOf(e.amount, left)
+        if (a > 0) out.add(if (a == e.amount) e else e.copy(amount = a))
+        left -= a
+    }
+    return out
+}
+
+/** Keeps today's totals within the daily maximums (fixes anything logged by older versions). */
+fun AppState.withinDailyLimits(): AppState {
+    val w = if (waterTotal > WATER_DAY_MAX) capEntries(water, WATER_DAY_MAX) else water
+    val p = if (proteinTotal > PROTEIN_DAY_MAX) capEntries(protein, PROTEIN_DAY_MAX) else protein
+    return if (w === water && p === protein) this else copy(water = w, protein = p)
+}
 
 fun AppState.resetToday(): AppState = copy(water = emptyList(), protein = emptyList())
 
@@ -96,7 +128,7 @@ object Store {
     fun load(context: Context): AppState {
         val raw = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getString(KEY, null)
         val state = if (raw == null) AppState() else runCatching { fromJson(JSONObject(raw)) }.getOrElse { AppState() }
-        val rolled = rollOver(state)
+        val rolled = rollOver(state).withinDailyLimits()
         if (rolled !== state) save(context, rolled)
         return rolled
     }

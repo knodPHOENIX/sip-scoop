@@ -404,8 +404,8 @@ fun Pulse(bump: Int, modifier: Modifier = Modifier, content: @Composable () -> U
 
 /** Most you can set or log in one go, and the gentle "too low" goal nudges. */
 object Limits {
-    const val WATER_MAX = 10000
-    const val PROTEIN_MAX = 400
+    const val WATER_MAX = com.sipscoop.app.data.WATER_DAY_MAX
+    const val PROTEIN_MAX = com.sipscoop.app.data.PROTEIN_DAY_MAX
     const val WATER_LOW = 2000
     const val PROTEIN_LOW = 50
 

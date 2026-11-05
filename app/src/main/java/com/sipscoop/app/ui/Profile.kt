@@ -584,7 +584,7 @@ fun SettingsScreen(
             SectionLabel("Help")
             Card {
                 MenuRow("Report a bug", C.RedSoft, { LineIcon(Ic.BUG, C.Red, 18.dp, 2f) }, subtitle = "Write what happened and send it") { showBug = true }
-                SettingRow("App version", null, showDivider = false) { Text("1.2", style = T.bold(14, C.Muted)) }
+                SettingRow("App version", null, showDivider = false) { Text("1.2.1", style = T.bold(14, C.Muted)) }
             }
         }
     }
