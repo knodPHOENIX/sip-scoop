@@ -76,7 +76,7 @@ fun Onboarding(initial: AppState, onFinish: (name: String, age: Int, avatar: Str
         0 -> name.isNotBlank()
         1 -> ageN in 5..110
         2 -> true
-        3 -> waterN in 250..10000 && proteinN in 5..500
+        3 -> waterN in 1..Limits.WATER_MAX && proteinN in 1..Limits.PROTEIN_MAX
         else -> true
     }
     val progress by animateFloatAsState(step / 4f, tween(600, easing = FastOutSlowInEasing), label = "progress")
@@ -188,9 +188,9 @@ fun Onboarding(initial: AppState, onFinish: (name: String, age: Int, avatar: Str
                             Text("Water per day", style = T.bold(16, C.BlueDark))
                             Stepper(
                                 label = "Water", value = water, unit = "ml", accent = WaterAccent,
-                                onChange = { water = it },
+                                onChange = { v -> water = clampGoal(v, Limits.WATER_MAX) },
                                 onMinus = { water = maxOf(250, waterN - 250).toString() },
-                                onPlus = { water = minOf(10000, waterN + 250).toString() },
+                                onPlus = { water = minOf(Limits.WATER_MAX, waterN + 250).toString() },
                                 background = Color.Transparent
                             )
                             Text(
@@ -199,6 +199,8 @@ fun Onboarding(initial: AppState, onFinish: (name: String, age: Int, avatar: Str
                                 textAlign = TextAlign.Center,
                                 modifier = Modifier.fillMaxWidth()
                             )
+                            Limits.goalWarning(true, waterN)?.let { NoteBox(it, warning = true) }
+                            if (waterN >= Limits.WATER_MAX) NoteBox("10 litres is the most you can set.", warning = false)
                         }
                         Column(
                             Modifier
@@ -210,11 +212,13 @@ fun Onboarding(initial: AppState, onFinish: (name: String, age: Int, avatar: Str
                             Text("Protein per day", style = T.bold(16, C.OrangeText))
                             Stepper(
                                 label = "Protein", value = protein, unit = "g", accent = ProteinAccent,
-                                onChange = { protein = it },
+                                onChange = { v -> protein = clampGoal(v, Limits.PROTEIN_MAX) },
                                 onMinus = { protein = maxOf(5, proteinN - 5).toString() },
-                                onPlus = { protein = minOf(500, proteinN + 5).toString() },
+                                onPlus = { protein = minOf(Limits.PROTEIN_MAX, proteinN + 5).toString() },
                                 background = Color.Transparent
                             )
+                            Limits.goalWarning(false, proteinN)?.let { NoteBox(it, warning = true) }
+                            if (proteinN >= Limits.PROTEIN_MAX) NoteBox("400 g is the most you can set.", warning = false)
                         }
                     }
                     else -> AllSet(firstName, avatar, waterN, proteinN)
@@ -325,4 +329,9 @@ private fun AllSet(firstName: String, avatar: String, water: Int, protein: Int) 
             }
         }
     }
+}
+
+private fun clampGoal(v: String, max: Int): String {
+    val n = v.toIntOrNull() ?: return v
+    return if (n > max) max.toString() else v
 }

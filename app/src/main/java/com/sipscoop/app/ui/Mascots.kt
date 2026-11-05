@@ -1,6 +1,18 @@
 package com.sipscoop.app.ui
 
 import androidx.compose.foundation.Canvas
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.StartOffset
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.keyframes
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.graphics.TransformOrigin
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.drawscope.scale
+import kotlin.math.sin
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -50,7 +62,7 @@ fun curve(x0: Float, y: Float, x1: Float, dip: Float) = Path().apply {
     cubicTo(x0 + (cx - x0) * 2f / 3f, y + (dip - y) * 2f / 3f, x1 + (cx - x1) * 2f / 3f, y + (dip - y) * 2f / 3f, x1, y)
 }
 
-fun DrawScope.drawDrip(body: Color = C.Blue, celebrate: Boolean = false) {
+fun DrawScope.drawDrip(body: Color = C.Blue, celebrate: Boolean = false, blink: Float = 1f) {
     drawPath(dropPath(), body)
     if (celebrate) {
         val st = Stroke(width = 10f, cap = StrokeCap.Round, join = StrokeJoin.Round)
@@ -63,23 +75,27 @@ fun DrawScope.drawDrip(body: Color = C.Blue, celebrate: Boolean = false) {
         }
         drawPath(mouth, C.Navy)
     } else if (body == Color.White) {
-        drawCircle(C.Navy, 19f, Offset(192f, 290f))
-        drawCircle(C.Navy, 19f, Offset(262f, 290f))
-        drawCircle(Color.White, 6f, Offset(199f, 282f))
-        drawCircle(Color.White, 6f, Offset(269f, 282f))
+        scale(1f, blink, Offset(227f, 288f)) {
+            drawCircle(C.Navy, 19f, Offset(192f, 290f))
+            drawCircle(C.Navy, 19f, Offset(262f, 290f))
+            drawCircle(Color.White, 6f, Offset(199f, 282f))
+            drawCircle(Color.White, 6f, Offset(269f, 282f))
+        }
         drawPath(curve(206f, 326f, 248f, 350f), C.Navy, style = Stroke(width = 9f, cap = StrokeCap.Round))
     } else {
-        drawCircle(Color.White, 20f, Offset(192f, 270f))
-        drawCircle(Color.White, 20f, Offset(262f, 270f))
-        drawCircle(C.Navy, 11f, Offset(196f, 274f))
-        drawCircle(C.Navy, 11f, Offset(266f, 274f))
+        scale(1f, blink, Offset(227f, 270f)) {
+            drawCircle(Color.White, 20f, Offset(192f, 270f))
+            drawCircle(Color.White, 20f, Offset(262f, 270f))
+            drawCircle(C.Navy, 11f, Offset(196f, 274f))
+            drawCircle(C.Navy, 11f, Offset(266f, 274f))
+        }
         drawPath(curve(200f, 316f, 254f, 344f), C.Navy, style = Stroke(width = 10f, cap = StrokeCap.Round))
     }
     drawOval(C.Pink, topLeft = Offset(150f, 308f), size = Size(28f, 16f))
     drawOval(C.Pink, topLeft = Offset(276f, 308f), size = Size(28f, 16f))
 }
 
-fun DrawScope.drawEgg(body: Color = C.Orange, outline: Color? = null, celebrate: Boolean = false) {
+fun DrawScope.drawEgg(body: Color = C.Orange, outline: Color? = null, celebrate: Boolean = false, blink: Float = 1f) {
     val p = eggPath()
     drawPath(p, body)
     if (outline != null) drawPath(p, outline, style = Stroke(width = 10f))
@@ -88,36 +104,79 @@ fun DrawScope.drawEgg(body: Color = C.Orange, outline: Color? = null, celebrate:
         drawPath(curve(362f, 350f, 378f, 340f), C.Navy, style = st)
         drawPath(curve(390f, 350f, 406f, 340f), C.Navy, style = st)
     } else {
-        drawCircle(Color.White, 9f, Offset(370f, 346f))
-        drawCircle(Color.White, 9f, Offset(398f, 346f))
-        drawCircle(C.Navy, 5f, Offset(372f, 348f))
-        drawCircle(C.Navy, 5f, Offset(400f, 348f))
+        scale(1f, blink, Offset(384f, 347f)) {
+            drawCircle(Color.White, 9f, Offset(370f, 346f))
+            drawCircle(Color.White, 9f, Offset(398f, 346f))
+            drawCircle(C.Navy, 5f, Offset(372f, 348f))
+            drawCircle(C.Navy, 5f, Offset(400f, 348f))
+        }
     }
     drawPath(curve(372f, 370f, 396f, 382f), C.Navy, style = Stroke(width = 5f, cap = StrokeCap.Round))
 }
 
+/** Eyes close briefly every 4 seconds; [offsetMs] keeps two mascots from blinking in sync. */
+@Composable
+fun rememberBlink(offsetMs: Int = 0): Float {
+    val inf = rememberInfiniteTransition(label = "blink")
+    val v by inf.animateFloat(
+        initialValue = 1f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            keyframes {
+                durationMillis = 4000
+                1f at 0
+                1f at 3700
+                0.08f at 3790
+                1f at 3900
+            },
+            initialStartOffset = StartOffset(offsetMs)
+        ),
+        label = "blinkV"
+    )
+    return v
+}
+
+/** A slow, gentle wobble so the mascots always look alive. */
+@Composable
+private fun Modifier.jiggle(enabled: Boolean): Modifier {
+    if (!enabled) return this
+    val inf = rememberInfiniteTransition(label = "jiggle")
+    val t by inf.animateFloat(0f, 1f, infiniteRepeatable(tween(2400, easing = LinearEasing)), label = "jig")
+    return this.graphicsLayer {
+        val a = (t * 2.0 * Math.PI).toFloat()
+        rotationZ = 3f * sin(a)
+        scaleX = 1f + 0.02f * sin(a * 2f)
+        scaleY = 1f - 0.02f * sin(a * 2f)
+        transformOrigin = TransformOrigin(0.5f, 1f)
+    }
+}
+
 /** Drip, the water drop. The box leaves room so nothing is ever cut off. */
 @Composable
-fun DripMascot(modifier: Modifier = Modifier, celebrate: Boolean = false) {
-    Canvas(modifier) {
-        inViewBox(104f, 58f, 244f, 356f) { drawDrip(celebrate = celebrate) }
+fun DripMascot(modifier: Modifier = Modifier, celebrate: Boolean = false, alive: Boolean = true) {
+    val blink = if (alive) rememberBlink() else 1f
+    Canvas(modifier.jiggle(alive)) {
+        inViewBox(104f, 58f, 244f, 356f) { drawDrip(celebrate = celebrate, blink = blink) }
     }
 }
 
 @Composable
-fun EggMascot(modifier: Modifier = Modifier, celebrate: Boolean = false) {
-    Canvas(modifier) {
-        inViewBox(324f, 270f, 120f, 154f) { drawEgg(celebrate = celebrate) }
+fun EggMascot(modifier: Modifier = Modifier, celebrate: Boolean = false, alive: Boolean = true) {
+    val blink = if (alive) rememberBlink(900) else 1f
+    Canvas(modifier.jiggle(alive)) {
+        inViewBox(324f, 270f, 120f, 154f) { drawEgg(celebrate = celebrate, blink = blink) }
     }
 }
 
 /** Both mascots together, as on the app icon. */
 @Composable
-fun MascotPair(modifier: Modifier = Modifier, dripColor: Color = Color.White, celebrate: Boolean = false) {
-    Canvas(modifier) {
+fun MascotPair(modifier: Modifier = Modifier, dripColor: Color = Color.White, celebrate: Boolean = false, alive: Boolean = true) {
+    val b1 = if (alive) rememberBlink() else 1f
+    val b2 = if (alive) rememberBlink(900) else 1f
+    Canvas(modifier.jiggle(alive)) {
         inViewBox(100f, 56f, 344f, 366f) {
-            drawDrip(body = dripColor, celebrate = celebrate)
-            drawEgg(outline = Color.White, celebrate = celebrate)
+            drawDrip(body = dripColor, celebrate = celebrate, blink = b1)
+            drawEgg(outline = Color.White, celebrate = celebrate, blink = b2)
         }
     }
 }

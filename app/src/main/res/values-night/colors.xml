@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="ink">#EAF2F8</color>
+    <color name="muted">#9DB0C1</color>
+    <color name="blue_text">#7CCBFA</color>
+    <color name="orange_text">#FFB27A</color>
+    <color name="green_text">#9BE58A</color>
+    <color name="yellow_text">#FFD95A</color>
+
+    <color name="widget_surface">#17232F</color>
+    <color name="widget_water_card">#142B3E</color>
+    <color name="widget_protein_card">#2A1D14</color>
+    <color name="widget_water_track">#21445F</color>
+    <color name="widget_protein_track">#4A3526</color>
+    <color name="widget_water_edge">#0F6CAD</color>
+    <color name="widget_protein_edge">#B85512</color>
+    <color name="widget_done_line">#2E5A28</color>
+    <color name="widget_streak_bg">#30270C</color>
+</resources>

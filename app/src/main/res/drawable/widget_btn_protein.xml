@@ -3,7 +3,7 @@
     <item android:state_pressed="true">
         <layer-list>
             <item android:top="3dp">
-                <shape android:shape="rectangle"><corners android:radius="14dp" /><solid android:color="#D9681F" /></shape>
+                <shape android:shape="rectangle"><corners android:radius="14dp" /><solid android:color="@color/widget_protein_edge" /></shape>
             </item>
             <item android:top="3dp" android:bottom="1dp">
                 <shape android:shape="rectangle"><corners android:radius="14dp" /><solid android:color="#FF8A3D" /></shape>
@@ -13,7 +13,7 @@
     <item>
         <layer-list>
             <item>
-                <shape android:shape="rectangle"><corners android:radius="14dp" /><solid android:color="#D9681F" /></shape>
+                <shape android:shape="rectangle"><corners android:radius="14dp" /><solid android:color="@color/widget_protein_edge" /></shape>
             </item>
             <item android:bottom="4dp">
                 <shape android:shape="rectangle"><corners android:radius="14dp" /><solid android:color="#FF8A3D" /></shape>

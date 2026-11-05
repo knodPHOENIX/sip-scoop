@@ -17,6 +17,8 @@ import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -41,6 +43,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -53,6 +56,7 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.dp
 import com.sipscoop.app.data.AppState
+import kotlinx.coroutines.launch
 
 @Composable
 fun AppRoot(
@@ -99,8 +103,9 @@ fun MainScreen(
     update: ((AppState) -> AppState) -> Unit,
     onNeedNotificationPermission: () -> Unit
 ) {
-    var tab by rememberSaveable { mutableIntStateOf(0) }
     var page by rememberSaveable { mutableIntStateOf(HOME) }
+    val pager = rememberPagerState(pageCount = { 2 })
+    val scope = rememberCoroutineScope()
 
     BackHandler(enabled = page != HOME) {
         page = if (page == PROFILE) HOME else PROFILE
@@ -131,17 +136,14 @@ fun MainScreen(
                 SETTINGS -> SettingsScreen(state, update, onBack = { page = PROFILE }, onNeedNotificationPermission = onNeedNotificationPermission)
                 HISTORY -> HistoryScreen(state, onBack = { page = PROFILE })
                 else -> Column(Modifier.fillMaxSize().background(C.Bg)) {
+                    // Fixed top: greeting, streak and profile stay put while the pages slide.
+                    Box(Modifier.padding(start = 20.dp, end = 20.dp, top = 18.dp, bottom = 6.dp)) {
+                        GreetingHeader(state.firstName, state.streak, state.avatar) { page = PROFILE }
+                    }
+                    PageDots(pager.currentPage + pager.currentPageOffsetFraction)
                     Box(Modifier.weight(1f)) {
-                        AnimatedContent(
-                            targetState = tab,
-                            transitionSpec = {
-                                val forward = targetState > initialState
-                                (slideInHorizontally(tween(380)) { w -> if (forward) w / 4 else -w / 4 } + fadeIn(tween(380))) togetherWith
-                                    (slideOutHorizontally(tween(280)) { w -> if (forward) -w / 4 else w / 4 } + fadeOut(tween(200)))
-                            },
-                            label = "tabs"
-                        ) { t ->
-                            TrackerScreen(if (t == 0) Kind.WATER else Kind.PROTEIN, state, update, onProfile = { page = PROFILE })
+                        HorizontalPager(state = pager, beyondViewportPageCount = 1) { t ->
+                            TrackerScreen(if (t == 0) Kind.WATER else Kind.PROTEIN, state, update)
                         }
                     }
                     Box(Modifier.fillMaxWidth().height(2.dp).background(C.NavLine))
@@ -151,14 +153,34 @@ fun MainScreen(
                             .padding(horizontal = 20.dp, vertical = 12.dp),
                         horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        NavTab("Water", tab == 0, WaterAccent, water = true, modifier = Modifier.weight(1f)) { tab = 0 }
-                        NavTab("Protein", tab == 1, ProteinAccent, water = false, modifier = Modifier.weight(1f)) { tab = 1 }
+                        NavTab("Water", pager.currentPage == 0, WaterAccent, water = true, modifier = Modifier.weight(1f)) {
+                            scope.launch { pager.animateScrollToPage(0) }
+                        }
+                        NavTab("Protein", pager.currentPage == 1, ProteinAccent, water = false, modifier = Modifier.weight(1f)) {
+                            scope.launch { pager.animateScrollToPage(1) }
+                        }
                     }
                 }
             }
         }
+        CelebrationLayer(state)
     }
 }
+
+/** Two little pills under the header; the wide one follows your finger while swiping. */
+@Composable
+private fun PageDots(position: Float) {
+    val p = position.coerceIn(0f, 1f)
+    Row(
+        Modifier.fillMaxWidth().padding(bottom = 6.dp),
+        horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally)
+    ) {
+        Box(Modifier.size(width = (6 + 12 * (1 - p)).dp, height = 6.dp).background(lerpColor(C.Line, C.Blue, 1 - p), CircleShape))
+        Box(Modifier.size(width = (6 + 12 * p).dp, height = 6.dp).background(lerpColor(C.Line, C.Orange, p), CircleShape))
+    }
+}
+
+private fun lerpColor(a: Color, b: Color, t: Float): Color = androidx.compose.ui.graphics.lerp(a, b, t.coerceIn(0f, 1f))
 
 /** Both tabs always wear their own colour; the open one is filled in solid. */
 @Composable

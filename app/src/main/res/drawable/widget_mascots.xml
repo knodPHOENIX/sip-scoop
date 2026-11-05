@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Drip and the egg buddy cheering, for the "goals complete" widget. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="104dp"
+    android:height="96dp"
+    android:viewportWidth="344"
+    android:viewportHeight="366">
+    <group android:translateX="-100" android:translateY="-56">
+        <path android:fillColor="#1E9BF0" android:pathData="M226,66 C226,66 112,200 112,292 A114,114 0 0,0 340,292 C340,200 226,66 226,66 Z" />
+        <path android:strokeColor="#17324D" android:strokeWidth="12" android:strokeLineCap="round" android:pathData="M178,282 Q192,264 206,282 M248,282 Q262,264 276,282" />
+        <path android:fillColor="#17324D" android:pathData="M198,310 Q227,350 256,310 Z" />
+        <path android:fillColor="#FFB3C1" android:pathData="M150,314 a14,8 0 1,0 28,0 a14,8 0 1,0 -28,0 M276,314 a14,8 0 1,0 28,0 a14,8 0 1,0 -28,0" />
+        <path android:fillColor="#FF8A3D" android:strokeColor="@color/widget_surface" android:strokeWidth="12" android:pathData="M384,282 C356,282 336,332 336,364 A48,48 0 0,0 432,364 C432,332 412,282 384,282 Z" />
+        <path android:strokeColor="#17324D" android:strokeWidth="6" android:strokeLineCap="round" android:pathData="M362,350 Q370,340 378,350 M390,350 Q398,340 406,350 M372,368 Q384,382 396,368" />
+    </group>
+</vector>

@@ -3,6 +3,10 @@ package com.sipscoop.app.ui
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.animateIntAsState
@@ -76,7 +80,7 @@ private val WATER_LABELS = listOf("Glass", "Bottle", "A few sips")
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun TrackerScreen(kind: Kind, state: AppState, update: ((AppState) -> AppState) -> Unit, onProfile: () -> Unit) {
+fun TrackerScreen(kind: Kind, state: AppState, update: ((AppState) -> AppState) -> Unit) {
     val isWater = kind == Kind.WATER
     val accent = if (isWater) WaterAccent else ProteinAccent
     val unit = if (isWater) "ml" else "g"
@@ -135,11 +139,9 @@ fun TrackerScreen(kind: Kind, state: AppState, update: ((AppState) -> AppState) 
         modifier = Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .padding(horizontal = 20.dp, vertical = 18.dp),
+            .padding(start = 20.dp, end = 20.dp, top = 6.dp, bottom = 18.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        GreetingHeader(state.firstName, state.streak, state.avatar, onProfile)
-
         Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             Hopping(bump) {
                 if (isWater) DripMascot(Modifier.size(56.dp, 82.dp), celebrate = fraction >= 1f)
@@ -234,7 +236,7 @@ fun TrackerScreen(kind: Kind, state: AppState, update: ((AppState) -> AppState) 
                                         if (isWater) Text("Type an amount", style = T.bold(13, C.Muted))
                                     }
                                     editing -> InlineNumber(
-                                        value = quick[idx], unit = unit, accent = accent,
+                                        value = quick[idx], unit = unit, accent = accent, max = Limits.max(isWater),
                                         onChange = { setQuick(idx, it) },
                                         modifier = Modifier.fillMaxWidth()
                                     )
@@ -271,6 +273,8 @@ fun TrackerScreen(kind: Kind, state: AppState, update: ((AppState) -> AppState) 
             }
         }
 
+        if (isWater) SwipeHint()
+
         // Quick foods (protein only)
         if (!isWater) {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -304,7 +308,7 @@ fun TrackerScreen(kind: Kind, state: AppState, update: ((AppState) -> AppState) 
                                     modifier = Modifier.weight(1f)
                                 )
                                 InlineNumber(
-                                    value = f.grams, unit = "g", accent = accent,
+                                    value = f.grams, unit = "g", accent = accent, max = Limits.PROTEIN_MAX,
                                     onChange = { g -> update { s -> s.copy(foods = s.foods.mapIndexed { j, x -> if (j == i) x.copy(grams = g) else x }) } },
                                     modifier = Modifier.width(86.dp)
                                 )
@@ -354,6 +358,8 @@ fun TrackerScreen(kind: Kind, state: AppState, update: ((AppState) -> AppState) 
         AmountDialog(
             title = if (isWater) "Add water" else "Add protein",
             initial = 0, unit = unit, accent = accent, confirmLabel = "Add",
+            max = Limits.max(isWater),
+            maxNote = if (isWater) "You can add up to 10,000 ml at a time." else "You can add up to 400 g at a time.",
             onDismiss = { showCustom = false },
             onConfirm = { v ->
                 add(v)
@@ -366,6 +372,9 @@ fun TrackerScreen(kind: Kind, state: AppState, update: ((AppState) -> AppState) 
             title = "Daily goal",
             initial = goal, unit = unit, accent = accent, confirmLabel = "Save",
             step = if (isWater) 250 else 5,
+            max = Limits.max(isWater),
+            maxNote = Limits.maxNote(isWater),
+            warning = { v -> Limits.goalWarning(isWater, v) },
             onDismiss = { showGoal = false },
             onConfirm = { v ->
                 update { s -> if (isWater) s.copy(waterGoal = v) else s.copy(proteinGoal = v) }
@@ -388,6 +397,7 @@ fun TrackerScreen(kind: Kind, state: AppState, update: ((AppState) -> AppState) 
         AmountDialog(
             title = "Change the ${e.time} entry",
             initial = e.amount, unit = unit, accent = accent, confirmLabel = "Save",
+            max = Limits.max(isWater),
             onDismiss = { editEntry = null },
             onConfirm = { v ->
                 update { s ->
@@ -438,7 +448,7 @@ private fun EntryChip(text: String, accent: Accent, onClick: () -> Unit) {
 
 /** A small box for typing a number straight into a quick-add slot. */
 @Composable
-fun InlineNumber(value: Int, unit: String, accent: Accent, onChange: (Int) -> Unit, modifier: Modifier = Modifier) {
+fun InlineNumber(value: Int, unit: String, accent: Accent, onChange: (Int) -> Unit, modifier: Modifier = Modifier, max: Int = 9999) {
     var text by remember(value) { mutableStateOf(if (value > 0) value.toString() else "") }
     Column(
         modifier = modifier
@@ -452,9 +462,15 @@ fun InlineNumber(value: Int, unit: String, accent: Accent, onChange: (Int) -> Un
         BasicTextField(
             value = text,
             onValueChange = { v ->
-                val d = v.filter { it.isDigit() }.take(4)
-                text = d
-                d.toIntOrNull()?.let { if (it > 0) onChange(it) }
+                val d = v.filter { it.isDigit() }.take(5)
+                val n = d.toIntOrNull()
+                if (n != null && n > max) {
+                    text = max.toString()
+                    onChange(max)
+                } else {
+                    text = d
+                    n?.let { if (it > 0) onChange(it) }
+                }
             },
             singleLine = true,
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
@@ -497,4 +513,22 @@ private fun EditTotalButton(accent: Accent, onClick: () -> Unit) {
         fill = false, radius = 12.dp, depth = 4.dp,
         contentPadding = PaddingValues(7.dp)
     ) { LineIcon(Ic.PENCIL, accent.text, 18.dp) }
+}
+
+/** A small nudge that the protein screen is one swipe away. */
+@Composable
+private fun SwipeHint() {
+    val inf = rememberInfiniteTransition(label = "hint")
+    val dx by inf.animateFloat(0f, -8f, infiniteRepeatable(tween(800, easing = FastOutSlowInEasing), RepeatMode.Reverse), label = "dx")
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .graphicsLayer { translationX = dx * density },
+        horizontalArrangement = Arrangement.End,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text("Swipe for protein", style = T.bold(13, C.Muted))
+        Spacer(Modifier.width(6.dp))
+        LineIcon(Ic.BACK, C.Muted, 16.dp, 3f)
+    }
 }

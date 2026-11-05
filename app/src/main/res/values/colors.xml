@@ -5,4 +5,17 @@
     <color name="muted">#5B6B7B</color>
     <color name="blue_text">#1477BE</color>
     <color name="orange_text">#B85512</color>
+    <color name="green_text">#2F7A1E</color>
+    <color name="yellow_text">#7A5300</color>
+
+    <!-- widget colours (dark versions live in values-night) -->
+    <color name="widget_surface">#FFFFFF</color>
+    <color name="widget_water_card">#EAF6FE</color>
+    <color name="widget_protein_card">#FFF2E7</color>
+    <color name="widget_water_track">#CFE7F7</color>
+    <color name="widget_protein_track">#F5DCC7</color>
+    <color name="widget_water_edge">#1477BE</color>
+    <color name="widget_protein_edge">#D9681F</color>
+    <color name="widget_done_line">#BFE8B4</color>
+    <color name="widget_streak_bg">#FFF6D6</color>
 </resources>

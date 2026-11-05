@@ -402,6 +402,52 @@ fun Pulse(bump: Int, modifier: Modifier = Modifier, content: @Composable () -> U
     ) { content() }
 }
 
+/** Most you can set or log in one go, and the gentle "too low" goal nudges. */
+object Limits {
+    const val WATER_MAX = 10000
+    const val PROTEIN_MAX = 400
+    const val WATER_LOW = 2000
+    const val PROTEIN_LOW = 50
+
+    fun max(isWater: Boolean) = if (isWater) WATER_MAX else PROTEIN_MAX
+
+    fun goalWarning(isWater: Boolean, goal: Int): String? = when {
+        goal <= 0 -> null
+        isWater && goal < WATER_LOW -> "That's too low. Please keep it at least 2 litres a day for a healthy routine."
+        !isWater && goal < PROTEIN_LOW -> "That's not enough for an adult. Aim for at least 50 g a day."
+        else -> null
+    }
+
+    fun maxNote(isWater: Boolean): String =
+        if (isWater) "10 litres is the most you can set. Protein goes up to 400 g."
+        else "400 g is the most you can set. Water goes up to 10 litres."
+}
+
+/** A yellow warning or blue info note under a number field. */
+@Composable
+fun NoteBox(text: String, warning: Boolean) {
+    val bg = if (warning) C.YellowSoft else C.BlueSoft
+    val line = if (warning) C.YellowLine else C.BlueLine
+    val fg = if (warning) C.YellowText else C.BlueDark
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .background(bg, RoundedCornerShape(14.dp))
+            .border(2.dp, line, RoundedCornerShape(14.dp))
+            .padding(horizontal = 12.dp, vertical = 10.dp),
+        horizontalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
+        Canvas(Modifier.size(20.dp)) {
+            inViewBox(0f, 0f, 24f, 24f) {
+                drawPath(svg("M12 3 L22 20 L2 20 Z"), fg, style = Stroke(width = 2.2f, join = StrokeJoin.Round))
+                drawLine(fg, Offset(12f, 10f), Offset(12f, 14f), strokeWidth = 2.4f, cap = StrokeCap.Round)
+                drawCircle(fg, 1.3f, Offset(12f, 17f))
+            }
+        }
+        Text(text, style = T.body(14, fg), modifier = Modifier.weight(1f))
+    }
+}
+
 /** Dialog to type or adjust an amount; optional step buttons and a Delete button. */
 @Composable
 fun AmountDialog(
@@ -413,35 +459,62 @@ fun AmountDialog(
     onDismiss: () -> Unit,
     onConfirm: (Int) -> Unit,
     step: Int = 0,
-    onDelete: (() -> Unit)? = null
+    onDelete: (() -> Unit)? = null,
+    max: Int = Int.MAX_VALUE,
+    maxNote: String? = null,
+    warning: (Int) -> String? = { null }
 ) {
-    var text by remember { mutableStateOf(if (initial > 0) initial.toString() else "") }
+    var text by remember { mutableStateOf(if (initial > 0) minOf(initial, max).toString() else "") }
+    var hitMax by remember { mutableStateOf(false) }
     val value = text.toIntOrNull() ?: 0
+    val atMax = value >= max
+    val warn = warning(value)
+
+    fun setAmount(v: Int) {
+        hitMax = v >= max
+        text = v.coerceIn(0, max).toString()
+    }
+
     AlertDialog(
         onDismissRequest = onDismiss,
         containerColor = C.Surface,
         shape = RoundedCornerShape(24.dp),
         title = { Text(title, style = T.display(22)) },
         text = {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                if (step > 0) {
-                    Btn3D(
-                        onClick = { text = maxOf(step, value - step).toString() },
-                        face = C.Surface, edge = accent.line, border = accent.line,
-                        modifier = Modifier.size(52.dp, 56.dp), contentPadding = PaddingValues(0.dp)
-                    ) { Text("−", style = T.display(24, accent.text)) }
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    if (step > 0) {
+                        Btn3D(
+                            onClick = { setAmount(maxOf(step, value - step)) },
+                            face = C.Surface, edge = accent.line, border = accent.line,
+                            modifier = Modifier.size(52.dp, 56.dp), contentPadding = PaddingValues(0.dp)
+                        ) { Text("−", style = T.display(24, accent.text)) }
+                    }
+                    NumberField(
+                        value = text,
+                        onValueChange = { v ->
+                            val n = v.toIntOrNull()
+                            hitMax = false
+                            text = v
+                            if (n != null && n > max) setAmount(max)
+                        },
+                        label = "Amount", suffix = unit,
+                        accent = accent, modifier = Modifier.weight(1f)
+                    )
+                    if (step > 0) {
+                        Btn3D(
+                            onClick = {
+                                hitMax = atMax
+                                if (!atMax) setAmount(value + step)
+                            },
+                            face = if (atMax) C.Faint else C.Surface,
+                            edge = accent.line, border = accent.line,
+                            modifier = Modifier.size(52.dp, 56.dp), contentPadding = PaddingValues(0.dp)
+                        ) { Text("+", style = T.display(24, if (atMax) C.Line else accent.text)) }
+                    }
                 }
-                NumberField(
-                    value = text, onValueChange = { text = it }, label = "Amount", suffix = unit,
-                    accent = accent, modifier = Modifier.weight(1f)
-                )
-                if (step > 0) {
-                    Btn3D(
-                        onClick = { text = (value + step).toString() },
-                        face = C.Surface, edge = accent.line, border = accent.line,
-                        modifier = Modifier.size(52.dp, 56.dp), contentPadding = PaddingValues(0.dp)
-                    ) { Text("+", style = T.display(24, accent.text)) }
-                }
+                if (warn != null) NoteBox(warn, warning = true)
+                else if ((hitMax || atMax) && maxNote != null) NoteBox(maxNote, warning = false)
             }
         },
         confirmButton = {

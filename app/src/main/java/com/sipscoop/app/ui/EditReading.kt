@@ -113,7 +113,7 @@ fun EditReadingDialog(
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     BasicTextField(
                                         value = d.text,
-                                        onValueChange = { v -> drafts[i] = d.copy(text = v.filter { it.isDigit() }.take(5)) },
+                                        onValueChange = { v -> drafts[i] = d.copy(text = clampText(v, Limits.max(isWater))) },
                                         singleLine = true,
                                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                                         textStyle = T.display(18),
@@ -166,7 +166,7 @@ fun EditReadingDialog(
                                 if (totalText.isEmpty()) Text(fmt(draftSum), style = T.display(18, C.Muted.copy(alpha = 0.6f)))
                                 BasicTextField(
                                     value = totalText,
-                                    onValueChange = { v -> totalText = v.filter { it.isDigit() }.take(5) },
+                                    onValueChange = { v -> totalText = clampText(v, Limits.max(isWater) * 20) },
                                     singleLine = true,
                                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                                     textStyle = T.display(18),
@@ -197,4 +197,10 @@ fun EditReadingDialog(
             ) { Text("Cancel", style = T.bold(15, C.Muted)) }
         }
     )
+}
+
+private fun clampText(v: String, max: Int): String {
+    val d = v.filter { it.isDigit() }.take(6)
+    val n = d.toIntOrNull() ?: return d
+    return if (n > max) max.toString() else d
 }

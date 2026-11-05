@@ -7,4 +7,7 @@
     <string name="widget_compact_desc">Small one-tap logger</string>
     <string name="water">Water</string>
     <string name="protein">Protein</string>
+    <string name="widget_done_title">Today\'s goals are complete!</string>
+    <string name="widget_done_short">Goals done today!</string>
+    <string name="widget_done_sub">See you tomorrow</string>
 </resources>

@@ -6,6 +6,7 @@ import android.appwidget.AppWidgetProvider
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.view.View
 import android.widget.RemoteViews
 import com.sipscoop.app.MainActivity
 import com.sipscoop.app.R
@@ -89,6 +90,16 @@ object WidgetSync {
             views.setTextViewText(R.id.protein_value, "${s.proteinTotal} g")
             views.setTextViewText(R.id.water_add, "+$waterStep")
             views.setTextViewText(R.id.protein_add, "+$proteinStep g")
+        }
+
+        // Both goals hit: swap the buttons for a little celebration.
+        val done = s.onboarded && s.todayMet
+        views.setViewVisibility(R.id.normal_group, if (done) View.GONE else View.VISIBLE)
+        views.setViewVisibility(R.id.done_group, if (done) View.VISIBLE else View.GONE)
+        if (layout == R.layout.widget_wide) {
+            views.setTextViewText(R.id.done_totals, "${liters(s.waterTotal)} water · ${s.proteinTotal} g protein")
+            val streak = s.streak
+            views.setTextViewText(R.id.done_streak, "$streak-day streak")
         }
 
         views.setOnClickPendingIntent(R.id.water_add, broadcast(context, cls, ACTION_ADD_WATER, 1))
