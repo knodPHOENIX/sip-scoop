@@ -101,9 +101,10 @@ fun AppRoot(
 
 private const val HOME = 0
 private const val PROFILE = 1
-private const val SETTINGS = 2
+private const val APPEARANCE = 2
 private const val HISTORY = 3
 private const val FOOD = 4
+private const val NOTIFICATIONS = 5
 
 @Composable
 fun MainScreen(
@@ -147,10 +148,12 @@ fun MainScreen(
                 PROFILE -> ProfileScreen(
                     state, update,
                     onBack = { page = HOME },
-                    onSettings = { page = SETTINGS },
+                    onAppearance = { page = APPEARANCE },
+                    onNotifications = { page = NOTIFICATIONS },
                     onHistory = { page = HISTORY }
                 )
-                SETTINGS -> SettingsScreen(state, update, onBack = { page = PROFILE }, onNeedNotificationPermission = onNeedNotificationPermission)
+                APPEARANCE -> AppearanceScreen(state, update, onBack = { page = PROFILE })
+                NOTIFICATIONS -> NotificationsScreen(state, update, onBack = { page = PROFILE }, onNeedNotificationPermission = onNeedNotificationPermission)
                 HISTORY -> HistoryScreen(state, onBack = { page = PROFILE })
                 FOOD -> FoodSearchScreen(
                     state, update,

@@ -35,6 +35,7 @@ object Ic {
     const val CLOCK = "M12 3 A9 9 0 1 0 12 21 A9 9 0 1 0 12 3 Z M12 7 L12 12 L15.5 14"
     const val BOX = "M5 8 L12 4 L19 8 L19 16 L12 20 L5 16 Z M5 8 L12 12 L19 8 M12 12 L12 20"
     const val STAR = "M12 3 L14.6 8.8 L21 9.4 L16.2 13.6 L17.6 20 L12 16.7 L6.4 20 L7.8 13.6 L3 9.4 L9.4 8.8 Z"
+    const val BELL = "M6 16 L6 11 A6 6 0 0 1 18 11 L18 16 L20 18 L4 18 Z M10 20.5 A2 2 0 0 0 14 20.5"
     const val GEM = "M7 3 L17 3 L22 9 L12 21 L2 9 Z"
     const val GEM_LINES = "M2 9 L22 9 M7 3 L12 9 L17 3 M12 9 L12 21"
 }

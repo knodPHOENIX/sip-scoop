@@ -172,7 +172,7 @@ fun TrackerScreen(
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            Hopping(bump) {
+            Hopping(bump, Modifier.padding(top = 18.dp)) {
                 if (isWater) DripMascot(Modifier.size(56.dp, 82.dp), celebrate = fraction >= 1f)
                 else EggMascot(Modifier.size(58.dp, 74.dp), celebrate = fraction >= 1f)
             }

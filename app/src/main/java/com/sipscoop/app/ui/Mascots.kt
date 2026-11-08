@@ -184,8 +184,8 @@ private fun Modifier.mascotTouch(enabled: Boolean): Modifier {
                         held = true
                         haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                         launch { rot.animateTo(0f, tween(150)) }
-                        launch { sx.animateTo(1.22f, tween(520, easing = FastOutSlowInEasing)) }
-                        sy.animateTo(1.14f, tween(520, easing = FastOutSlowInEasing))
+                        launch { sx.animateTo(1.18f, tween(520, easing = FastOutSlowInEasing)) }
+                        sy.animateTo(1.12f, tween(520, easing = FastOutSlowInEasing))
                     }
                     tryAwaitRelease()
                     grow.cancel()

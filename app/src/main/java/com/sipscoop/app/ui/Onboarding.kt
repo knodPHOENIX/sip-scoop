@@ -248,7 +248,7 @@ fun Onboarding(initial: AppState, onFinish: (name: String, age: Int, avatar: Str
 @Composable
 private fun Asking(text: String, small: Boolean = false) {
     Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-        Hopping(0) {
+        Hopping(0, Modifier.padding(top = 18.dp)) {
             DripMascot(if (small) Modifier.size(62.dp, 90.dp) else Modifier.size(76.dp, 110.dp))
         }
         SpeechBubble(text, C.Line, Modifier.weight(1f))

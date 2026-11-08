@@ -1,5 +1,16 @@
 package com.sipscoop.app.ui
 
+import androidx.compose.ui.graphics.drawscope.clipRect
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.animation.togetherWith
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.shrinkVertically
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.foundation.text.selection.SelectionContainer
@@ -232,10 +243,15 @@ fun ProfileScreen(
     state: AppState,
     update: ((AppState) -> AppState) -> Unit,
     onBack: () -> Unit,
-    onSettings: () -> Unit,
+    onAppearance: () -> Unit,
+    onNotifications: () -> Unit,
     onHistory: () -> Unit
 ) {
     val context = LocalContext.current
+    var showBug by remember { mutableStateOf(false) }
+    val version = remember {
+        runCatching { context.packageManager.getPackageInfo(context.packageName, 0).versionName }.getOrNull() ?: ""
+    }
     var showName by remember { mutableStateOf(false) }
     var showPicture by remember { mutableStateOf(false) }
     var showReset by remember { mutableStateOf(false) }
@@ -280,9 +296,18 @@ fun ProfileScreen(
 
             Card {
                 MenuRow("Change name", C.BlueSoft, { LineIcon(Ic.PENCIL, C.BlueDark) }) { showName = true }
+                MenuRow(
+                    "Appearance", C.Faint,
+                    { if (ThemeState.dark) FillIcon(Ic.MOON, Color(0xFF7B86D9), 18.dp) else DayIcon(DayPart.DAY) },
+                    subtitle = themeLabel(state.themeMode), onClick = onAppearance
+                )
+                MenuRow(
+                    "Notifications", C.YellowSoft, { LineIcon(Ic.BELL, C.YellowText, 18.dp, 2.2f) },
+                    subtitle = notifySummary(state), onClick = onNotifications
+                )
                 MenuRow("History", C.GreenSoft, { LineIcon(Ic.BARS, C.GreenText, 18.dp, 3f) }, onClick = onHistory)
                 MenuRow("Reset today's readings", C.OrangeSoft, { LineIcon(Ic.RESET, C.OrangeText, 18.dp, 2.4f) }) { showReset = true }
-                MenuRow("Settings", C.Faint, { LineIcon(Ic.SLIDERS, C.Muted) }, onClick = onSettings)
+                MenuRow("Report a bug", C.RedSoft, { LineIcon(Ic.BUG, C.Red, 18.dp, 2f) }) { showBug = true }
                 MenuRow("Refer a friend", C.PinkSoft, { LineIcon(Ic.GIFT, C.PinkText, 18.dp, 2f) }, showDivider = false) { showShare = true }
             }
 
@@ -296,23 +321,30 @@ fun ProfileScreen(
             }
         }
 
-        Row(
+        Column(
             Modifier
                 .fillMaxWidth()
-                .padding(top = 12.dp, bottom = 20.dp),
-            horizontalArrangement = Arrangement.Center,
-            verticalAlignment = Alignment.CenterVertically
+                .padding(top = 12.dp, bottom = 18.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(3.dp)
         ) {
-            Canvas(Modifier.size(14.dp)) {
-                inViewBox(0f, 0f, 24f, 24f) {
-                    drawPath(svg(Ic.GEM), Color(0xFF2F6BDB))
-                    drawPath(svg(Ic.GEM_LINES), Color(0xFF9CC0FF), style = androidx.compose.ui.graphics.drawscope.Stroke(width = 1.2f))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Canvas(Modifier.size(14.dp)) {
+                    inViewBox(0f, 0f, 24f, 24f) {
+                        drawPath(svg(Ic.GEM), Color(0xFF2F6BDB))
+                        drawPath(svg(Ic.GEM_LINES), Color(0xFF9CC0FF), style = androidx.compose.ui.graphics.drawscope.Stroke(width = 1.2f))
+                    }
                 }
+                Spacer(Modifier.size(6.dp))
+                Text("BY SAPPHIRE", style = T.label(C.Muted).copy(letterSpacing = 3.2.sp))
             }
-            Spacer(Modifier.size(6.dp))
-            Text("BY SAPPHIRE", style = T.label(C.Muted).copy(letterSpacing = 3.2.sp))
+            if (version.isNotBlank()) {
+                Text("Version $version", style = T.body(11, C.Muted.copy(alpha = 0.75f)))
+            }
         }
     }
+
+    if (showBug) BugDialog(onClose = { showBug = false })
 
     if (showName) {
         var text by remember { mutableStateOf(state.name) }
@@ -472,16 +504,111 @@ private fun StatTile(modifier: Modifier, bg: Color, icon: @Composable () -> Unit
 
 // ---------------------------------------------------------------- settings
 
+private fun themeLabel(mode: String) = when (mode) {
+    "light" -> "Light"
+    "dark" -> "Dark"
+    else -> "Same as phone"
+}
+
+private fun notifySummary(s: AppState): String {
+    val on = listOf(s.remindWater, s.remindProtein, s.streakAlert).count { it }
+    return when (on) {
+        0 -> "All off"
+        3 -> "All on"
+        else -> "$on of 3 on"
+    }
+}
+
+// ---------------------------------------------------------------- appearance
+
 @Composable
-fun SettingsScreen(
+fun AppearanceScreen(
+    state: AppState,
+    update: ((AppState) -> AppState) -> Unit,
+    onBack: () -> Unit
+) {
+    Column(
+        Modifier
+            .fillMaxSize()
+            .background(C.Bg)
+            .verticalScroll(rememberScrollState())
+            .padding(horizontal = 20.dp, vertical = 18.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        TopBar("Appearance", onBack)
+        Text("Choose how Sip & Scoop looks.", style = T.body(15, C.Muted))
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            listOf("light", "dark", "system").forEach { mode ->
+                ThemeCard(mode, state.themeMode == mode, Modifier.weight(1f)) { update { it.copy(themeMode = mode) } }
+            }
+        }
+        NoteBox(
+            "\"Same as phone\" follows your phone's dark mode setting. Home-screen widgets always follow the phone.",
+            warning = false
+        )
+    }
+}
+
+@Composable
+private fun ThemeCard(mode: String, selected: Boolean, modifier: Modifier, onClick: () -> Unit) {
+    val border by animateColorAsState(if (selected) C.Blue else C.Line, tween(220), label = "themeBorder")
+    val scale by animateFloatAsState(if (selected) 1f else 0.97f, spring(dampingRatio = 0.55f, stiffness = Spring.StiffnessMedium), label = "themeScale")
+    Column(
+        modifier
+            .graphicsLayer { scaleX = scale; scaleY = scale }
+            .background(C.Surface, RoundedCornerShape(18.dp))
+            .border(if (selected) 3.dp else 2.dp, border, RoundedCornerShape(18.dp))
+            .clickable(onClick = onClick)
+            .padding(10.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        Canvas(Modifier.fillMaxWidth().height(110.dp)) {
+            fun phone(bg: Color, card: Color, line: Color, left: Float, right: Float) {
+                val r = androidx.compose.ui.geometry.CornerRadius(10.dp.toPx())
+                clipRect(left, 0f, right, size.height) {
+                    drawRoundRect(bg, size = size, cornerRadius = r)
+                    val pad = 8.dp.toPx()
+                    drawRoundRect(line, topLeft = Offset(pad, pad), size = androidx.compose.ui.geometry.Size(size.width * 0.5f, 6.dp.toPx()), cornerRadius = androidx.compose.ui.geometry.CornerRadius(3.dp.toPx()))
+                    drawRoundRect(card, topLeft = Offset(pad, pad + 14.dp.toPx()), size = androidx.compose.ui.geometry.Size(size.width - pad * 2, 34.dp.toPx()), cornerRadius = androidx.compose.ui.geometry.CornerRadius(6.dp.toPx()))
+                    drawRoundRect(C.Blue, topLeft = Offset(pad, size.height - pad - 20.dp.toPx()), size = androidx.compose.ui.geometry.Size((size.width - pad * 3) / 2, 20.dp.toPx()), cornerRadius = androidx.compose.ui.geometry.CornerRadius(6.dp.toPx()))
+                    drawRoundRect(C.Orange, topLeft = Offset(pad * 2 + (size.width - pad * 3) / 2, size.height - pad - 20.dp.toPx()), size = androidx.compose.ui.geometry.Size((size.width - pad * 3) / 2, 20.dp.toPx()), cornerRadius = androidx.compose.ui.geometry.CornerRadius(6.dp.toPx()))
+                }
+            }
+            val light = Triple(Color(0xFFFFFFFF), Color(0xFFEAF6FE), Color(0xFFD6E2EC))
+            val dark = Triple(Color(0xFF0F1923), Color(0xFF142B3E), Color(0xFF2C3D4D))
+            when (mode) {
+                "light" -> phone(light.first, light.second, light.third, 0f, size.width)
+                "dark" -> phone(dark.first, dark.second, dark.third, 0f, size.width)
+                else -> {
+                    phone(light.first, light.second, light.third, 0f, size.width / 2f)
+                    phone(dark.first, dark.second, dark.third, size.width / 2f, size.width)
+                }
+            }
+            drawRoundRect(Color(0x33000000), size = size, cornerRadius = androidx.compose.ui.geometry.CornerRadius(10.dp.toPx()), style = androidx.compose.ui.graphics.drawscope.Stroke(1.dp.toPx()))
+        }
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            Box(
+                Modifier
+                    .size(18.dp)
+                    .border(2.dp, if (selected) C.Blue else C.Line, CircleShape)
+                    .padding(4.dp)
+                    .background(if (selected) C.Blue else Color.Transparent, CircleShape)
+            )
+            Text(themeLabel(mode).replace("Same as phone", "System"), style = T.bold(14, if (selected) C.Ink else C.Muted))
+        }
+    }
+}
+
+// ---------------------------------------------------------------- notifications
+
+@Composable
+fun NotificationsScreen(
     state: AppState,
     update: ((AppState) -> AppState) -> Unit,
     onBack: () -> Unit,
     onNeedNotificationPermission: () -> Unit
 ) {
-    var showBug by remember { mutableStateOf(false) }
-    val context = LocalContext.current
-    val clipboard = LocalClipboardManager.current
     val quietPresets = listOf(21 to 7, 22 to 7, 23 to 8, 0 to 0)
 
     fun setNotify(change: (AppState) -> AppState, turnedOn: Boolean) {
@@ -497,51 +624,16 @@ fun SettingsScreen(
             .padding(horizontal = 20.dp, vertical = 18.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        TopBar("Settings", onBack)
+        TopBar("Notifications", onBack)
+        Text("Gentle reminders, only when they help.", style = T.body(15, C.Muted))
 
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            SectionLabel("Appearance")
-            Row(
-                Modifier
-                    .fillMaxWidth()
-                    .background(C.Faint, RoundedCornerShape(16.dp))
-                    .padding(5.dp),
-                horizontalArrangement = Arrangement.spacedBy(6.dp)
-            ) {
-                listOf("light" to "Light", "dark" to "Dark", "system" to "System").forEach { (mode, label) ->
-                    val sel = state.themeMode == mode
-                    val bg by animateColorAsState(
-                        if (sel) (if (ThemeState.dark) C.Line else C.Surface) else Color.Transparent,
-                        tween(220), label = "seg"
-                    )
-                    Row(
-                        Modifier
-                            .weight(1f)
-                            .background(bg, RoundedCornerShape(12.dp))
-                            .clickable { update { it.copy(themeMode = mode) } }
-                            .padding(vertical = 10.dp),
-                        horizontalArrangement = Arrangement.Center,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        when (mode) {
-                            "light" -> DayIcon(DayPart.DAY)
-                            "dark" -> FillIcon(Ic.MOON, Color(0xFF7B86D9), 16.dp)
-                            else -> LineIcon(Ic.PHONE, C.Muted, 16.dp, 2f)
-                        }
-                        Spacer(Modifier.size(6.dp))
-                        Text(label, style = T.bold(14, if (sel) C.Ink else C.Muted))
-                    }
-                }
-            }
-        }
-
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            SectionLabel("Notifications")
+            SectionLabel("Water")
             Card {
                 SettingRow("Water reminders", "A nudge when you're behind") {
                     Toggle(state.remindWater, "Water reminders") { on -> setNotify({ it.copy(remindWater = on) }, on) }
                 }
-                if (state.remindWater) {
+                AnimatedVisibility(visible = state.remindWater, enter = expandVertically() + fadeIn(), exit = shrinkVertically() + fadeOut()) {
                     Row(
                         Modifier.fillMaxWidth().padding(start = 14.dp, end = 14.dp, bottom = 12.dp),
                         verticalAlignment = Alignment.CenterVertically,
@@ -550,9 +642,10 @@ fun SettingsScreen(
                         Text("Remind me every", style = T.body(14, C.Muted), modifier = Modifier.weight(1f))
                         listOf(1, 2, 3).forEach { h ->
                             val sel = state.remindEveryHours == h
+                            val bg by animateColorAsState(if (sel) C.Blue else C.Faint, tween(200), label = "hours")
                             SquishButton(
                                 onClick = { update { it.copy(remindEveryHours = h) } },
-                                background = if (sel) C.Blue else C.Faint,
+                                background = bg,
                                 shape = RoundedCornerShape(10.dp),
                                 contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
                             ) { Text("$h h", style = T.bold(13, if (sel) Color.White else C.Muted)) }
@@ -560,7 +653,7 @@ fun SettingsScreen(
                     }
                 }
                 Divider()
-                SettingRow("Quiet hours", "Tap to change") {
+                SettingRow("Quiet hours", "No reminders during this time. Tap to change.") {
                     val label = if (state.quietStart == state.quietEnd) "Off"
                     else String.format(Locale.US, "%02d:00 – %02d:00", state.quietStart, state.quietEnd)
                     SquishButton(
@@ -574,8 +667,13 @@ fun SettingsScreen(
                         contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
                     ) { Text(label, style = T.bold(14)) }
                 }
-                Divider()
-                SettingRow("Protein check-in", "Every day at 20:00") {
+            }
+        }
+
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            SectionLabel("Protein and streak")
+            Card {
+                SettingRow("Protein check-in", "Every day at 20:00 if you're short") {
                     Toggle(state.remindProtein, "Protein check-in") { on -> setNotify({ it.copy(remindProtein = on) }, on) }
                 }
                 Divider()
@@ -584,58 +682,66 @@ fun SettingsScreen(
                 }
             }
         }
+    }
+}
 
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            SectionLabel("Help")
-            Card {
-                MenuRow("Report a bug", C.RedSoft, { LineIcon(Ic.BUG, C.Red, 18.dp, 2f) }, subtitle = "Email us what went wrong") { showBug = true }
-                SettingRow("App version", null, showDivider = false) { Text("1.3.1", style = T.bold(14, C.Muted)) }
-            }
+// ---------------------------------------------------------------- report a bug
+
+@Composable
+fun BugDialog(onClose: () -> Unit) {
+    val context = LocalContext.current
+    val clipboard = LocalClipboardManager.current
+    var copied by remember { mutableStateOf(false) }
+    LaunchedEffect(copied) {
+        if (copied) {
+            kotlinx.coroutines.delay(2000)
+            copied = false
         }
     }
-
-    if (showBug) {
-        var copied by remember { mutableStateOf(false) }
-        MessageDialog(
-            title = "Report a bug",
-            body = "We are a small independent firm, so please contact us directly by email. " +
-                "Tell us what happened and what you were doing, and we'll look into it.",
-            confirmLabel = "Email us",
-            confirmFace = C.Blue, confirmEdge = C.BlueEdge,
-            onConfirm = {
-                if (!emailSupport(context)) {
-                    clipboard.setText(AnnotatedString(SUPPORT_EMAIL))
-                    copied = true
-                } else {
-                    showBug = false
-                }
-            },
-            onDismiss = { showBug = false },
-            dismissLabel = "Close",
-            icon = { IconSquare(C.RedSoft) { LineIcon(Ic.BUG, C.Red, 22.dp, 2f) } },
-            extra = {
-                Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    SelectionContainer {
-                        Text(
-                            SUPPORT_EMAIL,
-                            style = T.bold(15, C.BlueDark),
-                            modifier = Modifier
-                                .background(C.BlueSoft, RoundedCornerShape(12.dp))
-                                .padding(horizontal = 14.dp, vertical = 8.dp)
-                        )
+    MessageDialog(
+        title = "Report a bug",
+        body = "Tell us what happened and when.",
+        confirmLabel = "Email us",
+        confirmFace = C.Blue, confirmEdge = C.BlueEdge,
+        onConfirm = {
+            val opened = emailSupport(context)
+            if (!opened) {
+                clipboard.setText(AnnotatedString(SUPPORT_EMAIL))
+                copied = true
+            }
+            if (opened) onClose()
+        },
+        onDismiss = onClose,
+        dismissLabel = "Close",
+        icon = { IconSquare(C.RedSoft) { LineIcon(Ic.BUG, C.Red, 22.dp, 2f) } },
+        extra = {
+            Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                SquishButton(
+                    onClick = {
+                        clipboard.setText(AnnotatedString(SUPPORT_EMAIL))
+                        copied = true
+                    },
+                    background = C.BlueSoft,
+                    shape = RoundedCornerShape(12.dp),
+                    contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp)
+                ) { Text(SUPPORT_EMAIL, style = T.bold(15, C.BlueDark)) }
+                AnimatedContent(
+                    targetState = copied,
+                    transitionSpec = { fadeIn(tween(180)) togetherWith fadeOut(tween(150)) },
+                    label = "copied"
+                ) { c ->
+                    if (c) {
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                            LineIcon(Ic.CHECK, C.GreenText, 14.dp, 3.5f)
+                            Text("Copied", style = T.bold(13, C.GreenText))
+                        }
+                    } else {
+                        Text("Tap the email to copy it", style = T.body(13, C.Muted))
                     }
-                    SquishButton(
-                        onClick = {
-                            clipboard.setText(AnnotatedString(SUPPORT_EMAIL))
-                            copied = true
-                        },
-                        background = C.Faint,
-                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
-                    ) { Text(if (copied) "Copied" else "Copy email address", style = T.bold(13, C.Muted)) }
                 }
             }
-        )
-    }
+        }
+    )
 }
 
 @Composable
