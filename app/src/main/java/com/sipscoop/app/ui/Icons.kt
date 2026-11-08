@@ -29,6 +29,12 @@ object Ic {
     const val EGG = "M12 3 C8.5 3 6 9 6 13.5 A6 6 0 0 0 18 13.5 C18 9 15.5 3 12 3 Z"
     const val BOLT = "M13.5 2 L4.5 13.5 L11 13.5 L9.5 22 L19.5 9.5 L13 9.5 Z"
     const val MOON = "M20 14.5 A8 8 0 1 1 9.5 4 A6.5 6.5 0 0 0 20 14.5 Z"
+    const val SEARCH = "M10.5 4 A6.5 6.5 0 1 0 10.5 17 A6.5 6.5 0 1 0 10.5 4 Z M15.5 15.5 L20 20"
+    const val CLOSE = "M6 6 L18 18 M18 6 L6 18"
+    const val GLOBE = "M12 3 A9 9 0 1 0 12 21 A9 9 0 1 0 12 3 Z M3 12 L21 12 M12 3 C15 6 15 18 12 21 C9 18 9 6 12 3"
+    const val CLOCK = "M12 3 A9 9 0 1 0 12 21 A9 9 0 1 0 12 3 Z M12 7 L12 12 L15.5 14"
+    const val BOX = "M5 8 L12 4 L19 8 L19 16 L12 20 L5 16 Z M5 8 L12 12 L19 8 M12 12 L12 20"
+    const val STAR = "M12 3 L14.6 8.8 L21 9.4 L16.2 13.6 L17.6 20 L12 16.7 L6.4 20 L7.8 13.6 L3 9.4 L9.4 8.8 Z"
     const val GEM = "M7 3 L17 3 L22 9 L12 21 L2 9 Z"
     const val GEM_LINES = "M2 9 L22 9 M7 3 L12 9 L17 3 M12 9 L12 21"
 }

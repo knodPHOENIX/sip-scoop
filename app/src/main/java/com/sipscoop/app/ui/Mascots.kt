@@ -1,5 +1,16 @@
 package com.sipscoop.app.ui
 
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.delay
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.remember
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.Animatable
 import androidx.compose.foundation.Canvas
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.StartOffset
@@ -151,11 +162,84 @@ private fun Modifier.jiggle(enabled: Boolean): Modifier {
     }
 }
 
+/**
+ * Makes a mascot playful: a quick tap gives a happy jiggle, and pressing and holding
+ * swells it up like jelly, which wobbles back into shape on release.
+ */
+@Composable
+private fun Modifier.mascotTouch(enabled: Boolean): Modifier {
+    if (!enabled) return this
+    val scope = rememberCoroutineScope()
+    val haptic = LocalHapticFeedback.current
+    val sx = remember { Animatable(1f) }
+    val sy = remember { Animatable(1f) }
+    val rot = remember { Animatable(0f) }
+    return this
+        .pointerInput(Unit) {
+            detectTapGestures(
+                onPress = {
+                    var held = false
+                    val grow = scope.launch {
+                        delay(220)
+                        held = true
+                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                        launch { rot.animateTo(0f, tween(150)) }
+                        launch { sx.animateTo(1.22f, tween(520, easing = FastOutSlowInEasing)) }
+                        sy.animateTo(1.14f, tween(520, easing = FastOutSlowInEasing))
+                    }
+                    tryAwaitRelease()
+                    grow.cancel()
+                    if (held) {
+                        // Let go: snap back with a wobbly, jelly-like bounce.
+                        scope.launch { sx.animateTo(1f, spring(dampingRatio = 0.22f, stiffness = 260f)) }
+                        scope.launch { sy.animateTo(1f, spring(dampingRatio = 0.22f, stiffness = 420f)) }
+                    } else {
+                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                        scope.launch {
+                            rot.animateTo(0f, keyframes {
+                                durationMillis = 620
+                                -11f at 80
+                                10f at 190
+                                -7f at 300
+                                5f at 410
+                                -2f at 520
+                            })
+                        }
+                        scope.launch {
+                            sy.animateTo(1f, keyframes {
+                                durationMillis = 520
+                                0.86f at 90
+                                1.12f at 220
+                                0.95f at 340
+                                1.03f at 440
+                            })
+                        }
+                        scope.launch {
+                            sx.animateTo(1f, keyframes {
+                                durationMillis = 520
+                                1.12f at 90
+                                0.92f at 220
+                                1.04f at 340
+                                0.99f at 440
+                            })
+                        }
+                    }
+                }
+            )
+        }
+        .graphicsLayer {
+            scaleX = sx.value
+            scaleY = sy.value
+            rotationZ = rot.value
+            transformOrigin = TransformOrigin(0.5f, 1f)
+        }
+}
+
 /** Drip, the water drop. The box leaves room so nothing is ever cut off. */
 @Composable
 fun DripMascot(modifier: Modifier = Modifier, celebrate: Boolean = false, alive: Boolean = true) {
     val blink = if (alive) rememberBlink() else 1f
-    Canvas(modifier.jiggle(alive)) {
+    Canvas(modifier.jiggle(alive).mascotTouch(alive)) {
         inViewBox(104f, 58f, 244f, 356f) { drawDrip(celebrate = celebrate, blink = blink) }
     }
 }
@@ -163,7 +247,7 @@ fun DripMascot(modifier: Modifier = Modifier, celebrate: Boolean = false, alive:
 @Composable
 fun EggMascot(modifier: Modifier = Modifier, celebrate: Boolean = false, alive: Boolean = true) {
     val blink = if (alive) rememberBlink(900) else 1f
-    Canvas(modifier.jiggle(alive)) {
+    Canvas(modifier.jiggle(alive).mascotTouch(alive)) {
         inViewBox(324f, 270f, 120f, 154f) { drawEgg(celebrate = celebrate, blink = blink) }
     }
 }

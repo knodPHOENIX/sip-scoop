@@ -1,5 +1,8 @@
 package com.sipscoop.app.ui
 
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateDpAsState
@@ -477,6 +480,8 @@ fun SettingsScreen(
     onNeedNotificationPermission: () -> Unit
 ) {
     var showBug by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+    val clipboard = LocalClipboardManager.current
     val quietPresets = listOf(21 to 7, 22 to 7, 23 to 8, 0 to 0)
 
     fun setNotify(change: (AppState) -> AppState, turnedOn: Boolean) {
@@ -583,31 +588,51 @@ fun SettingsScreen(
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             SectionLabel("Help")
             Card {
-                MenuRow("Report a bug", C.RedSoft, { LineIcon(Ic.BUG, C.Red, 18.dp, 2f) }, subtitle = "Write what happened and send it") { showBug = true }
-                SettingRow("App version", null, showDivider = false) { Text("1.2.1", style = T.bold(14, C.Muted)) }
+                MenuRow("Report a bug", C.RedSoft, { LineIcon(Ic.BUG, C.Red, 18.dp, 2f) }, subtitle = "Email us what went wrong") { showBug = true }
+                SettingRow("App version", null, showDivider = false) { Text("1.3.1", style = T.bold(14, C.Muted)) }
             }
         }
     }
 
     if (showBug) {
+        var copied by remember { mutableStateOf(false) }
         MessageDialog(
-            title = "Better luck next time",
-            body = "We're still under development. We'll bring a contact soon.",
-            confirmLabel = "Okay",
+            title = "Report a bug",
+            body = "We are a small independent firm, so please contact us directly by email. " +
+                "Tell us what happened and what you were doing, and we'll look into it.",
+            confirmLabel = "Email us",
             confirmFace = C.Blue, confirmEdge = C.BlueEdge,
-            onConfirm = { showBug = false },
+            onConfirm = {
+                if (!emailSupport(context)) {
+                    clipboard.setText(AnnotatedString(SUPPORT_EMAIL))
+                    copied = true
+                } else {
+                    showBug = false
+                }
+            },
             onDismiss = { showBug = false },
-            dismissLabel = null,
-            icon = { EggMascot(Modifier.size(64.dp, 76.dp)) },
+            dismissLabel = "Close",
+            icon = { IconSquare(C.RedSoft) { LineIcon(Ic.BUG, C.Red, 22.dp, 2f) } },
             extra = {
-                Text(
-                    "Boys, don't break NNN",
-                    style = T.bold(15, C.YellowText),
-                    modifier = Modifier
-                        .background(C.YellowSoft, CircleShape)
-                        .border(2.dp, C.YellowLine, CircleShape)
-                        .padding(horizontal = 14.dp, vertical = 8.dp)
-                )
+                Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    SelectionContainer {
+                        Text(
+                            SUPPORT_EMAIL,
+                            style = T.bold(15, C.BlueDark),
+                            modifier = Modifier
+                                .background(C.BlueSoft, RoundedCornerShape(12.dp))
+                                .padding(horizontal = 14.dp, vertical = 8.dp)
+                        )
+                    }
+                    SquishButton(
+                        onClick = {
+                            clipboard.setText(AnnotatedString(SUPPORT_EMAIL))
+                            copied = true
+                        },
+                        background = C.Faint,
+                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
+                    ) { Text(if (copied) "Copied" else "Copy email address", style = T.bold(13, C.Muted)) }
+                }
             }
         )
     }
@@ -836,4 +861,25 @@ private fun StatusPill(text: String, bg: Color, fg: Color) {
             .background(bg, CircleShape)
             .padding(horizontal = 10.dp, vertical = 5.dp)
     )
+}
+
+const val SUPPORT_EMAIL = "kshitijsingh8604@gmail.com"
+
+/** Opens the phone's email app with a bug report ready to fill in. Returns false if there is none. */
+fun emailSupport(context: android.content.Context): Boolean {
+    val version = runCatching { context.packageManager.getPackageInfo(context.packageName, 0).versionName }.getOrNull() ?: ""
+    val body = "Hi,\n\nWhat happened:\n\nWhat I was doing:\n\n---\nApp version: $version\n" +
+        "Phone: ${android.os.Build.MANUFACTURER} ${android.os.Build.MODEL}, Android ${android.os.Build.VERSION.RELEASE}"
+    val intent = android.content.Intent(android.content.Intent.ACTION_SENDTO).apply {
+        data = android.net.Uri.parse("mailto:")
+        putExtra(android.content.Intent.EXTRA_EMAIL, arrayOf(SUPPORT_EMAIL))
+        putExtra(android.content.Intent.EXTRA_SUBJECT, "Sip & Scoop bug report")
+        putExtra(android.content.Intent.EXTRA_TEXT, body)
+    }
+    return try {
+        context.startActivity(intent)
+        true
+    } catch (e: android.content.ActivityNotFoundException) {
+        false
+    }
 }

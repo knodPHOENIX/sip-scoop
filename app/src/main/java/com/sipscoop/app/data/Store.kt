@@ -51,7 +51,9 @@ data class AppState(
     val quietStart: Int = 22,
     val quietEnd: Int = 7,
     val remindProtein: Boolean = true,
-    val streakAlert: Boolean = false
+    val streakAlert: Boolean = false,
+    /** Built-in foods picked from search, newest first. */
+    val recentFoods: List<String> = emptyList()
 ) {
     val waterTotal: Int get() = water.sumOf { it.amount }
     val proteinTotal: Int get() = protein.sumOf { it.amount }
@@ -224,6 +226,7 @@ object Store {
             .put("quietEnd", s.quietEnd)
             .put("remindProtein", s.remindProtein)
             .put("streakAlert", s.streakAlert)
+            .put("recentFoods", JSONArray().apply { s.recentFoods.forEach { put(it) } })
     }
 
     private fun fromJson(o: JSONObject): AppState {
@@ -271,7 +274,8 @@ object Store {
             quietStart = o.optInt("quietStart", def.quietStart),
             quietEnd = o.optInt("quietEnd", def.quietEnd),
             remindProtein = o.optBoolean("remindProtein", def.remindProtein),
-            streakAlert = o.optBoolean("streakAlert", def.streakAlert)
+            streakAlert = o.optBoolean("streakAlert", def.streakAlert),
+            recentFoods = o.optJSONArray("recentFoods")?.let { a -> (0 until a.length()).map { a.getString(it) } } ?: emptyList()
         )
     }
 }

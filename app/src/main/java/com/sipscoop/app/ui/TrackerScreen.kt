@@ -83,7 +83,12 @@ private val WATER_LABELS = listOf("Glass", "Bottle", "A few sips")
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun TrackerScreen(kind: Kind, state: AppState, update: ((AppState) -> AppState) -> Unit) {
+fun TrackerScreen(
+    kind: Kind,
+    state: AppState,
+    update: ((AppState) -> AppState) -> Unit,
+    onSearchFood: () -> Unit = {}
+) {
     val isWater = kind == Kind.WATER
     val accent = if (isWater) WaterAccent else ProteinAccent
     val unit = if (isWater) "ml" else "g"
@@ -206,6 +211,7 @@ fun TrackerScreen(kind: Kind, state: AppState, update: ((AppState) -> AppState) 
                 }
             }
         } else {
+            FoodSearchBar(onClick = onSearchFood)
             Box {
                 Column(
                     modifier = Modifier

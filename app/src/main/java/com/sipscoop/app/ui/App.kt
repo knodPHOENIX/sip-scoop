@@ -1,5 +1,12 @@
 package com.sipscoop.app.ui
 
+import kotlinx.coroutines.delay
+import androidx.compose.foundation.border
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.AnimatedVisibility
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.animateColorAsState
@@ -96,6 +103,7 @@ private const val HOME = 0
 private const val PROFILE = 1
 private const val SETTINGS = 2
 private const val HISTORY = 3
+private const val FOOD = 4
 
 @Composable
 fun MainScreen(
@@ -107,8 +115,17 @@ fun MainScreen(
     val pager = rememberPagerState(pageCount = { 2 })
     val scope = rememberCoroutineScope()
 
+    var toast by remember { mutableStateOf<String?>(null) }
+    var toastKey by remember { mutableIntStateOf(0) }
+    LaunchedEffect(toastKey) {
+        if (toast != null) {
+            delay(3000)
+            toast = null
+        }
+    }
+
     BackHandler(enabled = page != HOME) {
-        page = if (page == PROFILE) HOME else PROFILE
+        page = if (page == PROFILE || page == FOOD) HOME else PROFILE
     }
 
     Box(
@@ -135,6 +152,14 @@ fun MainScreen(
                 )
                 SETTINGS -> SettingsScreen(state, update, onBack = { page = PROFILE }, onNeedNotificationPermission = onNeedNotificationPermission)
                 HISTORY -> HistoryScreen(state, onBack = { page = PROFILE })
+                FOOD -> FoodSearchScreen(
+                    state, update,
+                    onBack = { page = HOME },
+                    onAdded = { msg ->
+                        toast = msg
+                        toastKey++
+                    }
+                )
                 else -> Column(Modifier.fillMaxSize().background(C.Bg)) {
                     // Fixed top: greeting, streak and profile stay put while the pages slide.
                     Box(Modifier.padding(start = 20.dp, end = 20.dp, top = 18.dp, bottom = 6.dp)) {
@@ -143,7 +168,7 @@ fun MainScreen(
                     PageDots(pager.currentPage + pager.currentPageOffsetFraction)
                     Box(Modifier.weight(1f)) {
                         HorizontalPager(state = pager, beyondViewportPageCount = 1) { t ->
-                            TrackerScreen(if (t == 0) Kind.WATER else Kind.PROTEIN, state, update)
+                            TrackerScreen(if (t == 0) Kind.WATER else Kind.PROTEIN, state, update, onSearchFood = { page = FOOD })
                         }
                     }
                     Box(Modifier.fillMaxWidth().height(2.dp).background(C.NavLine))
@@ -161,6 +186,29 @@ fun MainScreen(
                         }
                     }
                 }
+            }
+        }
+        AnimatedVisibility(
+            visible = toast != null && page == HOME,
+            enter = slideInVertically(spring(dampingRatio = 0.6f, stiffness = Spring.StiffnessMediumLow)) { -it * 2 } + fadeIn(),
+            exit = slideOutVertically(tween(260)) { -it * 2 } + fadeOut(),
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .padding(start = 16.dp, end = 16.dp, top = 96.dp)
+        ) {
+            Row(
+                Modifier
+                    .fillMaxWidth()
+                    .background(C.Surface, RoundedCornerShape(16.dp))
+                    .border(2.dp, C.Green.copy(alpha = 0.55f), RoundedCornerShape(16.dp))
+                    .padding(horizontal = 14.dp, vertical = 12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                Box(Modifier.size(28.dp).background(C.Green, CircleShape), contentAlignment = Alignment.Center) {
+                    LineIcon(Ic.CHECK, Color.White, 14.dp, 4f)
+                }
+                Text(toast ?: "", style = T.bold(15), modifier = Modifier.weight(1f))
             }
         }
         CelebrationLayer(state)
