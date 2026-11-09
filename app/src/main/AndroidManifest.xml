@@ -4,6 +4,10 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="android.permission.ACTIVITY_RECOGNITION" />
+
+    <!-- Steps use the phone's step counter when it has one; the app still installs without it. -->
+    <uses-feature android:name="android.hardware.sensor.stepcounter" android:required="false" />
 
     <application
         android:allowBackup="true"
@@ -49,6 +53,10 @@
         </receiver>
         <receiver
             android:name=".notify.ReminderReceiver"
+            android:exported="false" />
+
+        <receiver
+            android:name=".steps.StepSnapshotReceiver"
             android:exported="false" />
 
         <receiver

@@ -18,4 +18,5 @@
     <color name="widget_protein_edge">#D9681F</color>
     <color name="widget_done_line">#BFE8B4</color>
     <color name="widget_streak_bg">#FFF6D6</color>
+    <color name="gold_text">#8A6100</color>
 </resources>

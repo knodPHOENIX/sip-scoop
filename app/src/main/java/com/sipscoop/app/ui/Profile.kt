@@ -259,7 +259,12 @@ fun ProfileScreen(
             }
 
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                StatTile(Modifier.weight(1f), C.YellowSoft, { FillIcon(Ic.BOLT, C.Yellow, 18.dp) }, "${state.streak} ${if (state.streak == 1) "day" else "days"}", C.YellowText, "Streak")
+                StreakBar(Modifier.weight(1f), C.YellowSoft, { ShoeIcon(17.dp) }, "${state.stepStreak}-day step streak", C.YellowText)
+                StreakBar(Modifier.weight(1f), C.BlueSoft, { FillIcon(Ic.BOLT, C.Blue, 16.dp) }, "${state.streak}-day diet streak", C.BlueDark)
+            }
+
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                StatTile(Modifier.weight(1f), C.YellowSoft, { ShoeIcon(20.dp) }, fmt(state.stepGoal), C.YellowText, "Step goal")
                 StatTile(Modifier.weight(1f), C.BlueSoft, { FillIcon(Ic.DROP, C.Blue, 18.dp) }, liters(state.waterGoal), C.BlueDark, "Water goal")
                 StatTile(Modifier.weight(1f), C.OrangeSoft, { FillIcon(Ic.EGG, C.Orange, 18.dp) }, "${state.proteinGoal} g", C.OrangeText, "Protein goal")
             }
@@ -335,7 +340,7 @@ fun ProfileScreen(
     if (showReset) {
         MessageDialog(
             title = "Reset today's readings?",
-            body = "This clears the ${fmt(state.waterTotal)} ml of water and ${state.proteinTotal} g of protein logged today. Earlier days and your streak stay as they are.",
+            body = "This clears the ${fmt(state.waterTotal)} ml of water and ${state.proteinTotal} g of protein logged today. Your steps, earlier days and your streaks stay as they are.",
             confirmLabel = "Reset today",
             confirmFace = C.Orange, confirmEdge = C.OrangeDark,
             onConfirm = {
@@ -389,6 +394,20 @@ fun ProfileScreen(
 }
 
 @Composable
+private fun StreakBar(modifier: Modifier, bg: Color, icon: @Composable () -> Unit, text: String, color: Color) {
+    Row(
+        modifier
+            .background(bg, RoundedCornerShape(14.dp))
+            .padding(horizontal = 8.dp, vertical = 7.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(5.dp, Alignment.CenterHorizontally)
+    ) {
+        icon()
+        Text(text, style = T.bold(13, color), maxLines = 1)
+    }
+}
+
+@Composable
 private fun StatTile(modifier: Modifier, bg: Color, icon: @Composable () -> Unit, value: String, valueColor: Color, label: String) {
     // Icon, value and title share one centre line so the tile is perfectly symmetric.
     Column(
@@ -413,11 +432,11 @@ private fun themeLabel(mode: String) = when (mode) {
 }
 
 private fun notifySummary(s: AppState): String {
-    val on = listOf(s.remindWater, s.remindProtein, s.streakAlert).count { it }
+    val on = listOf(s.remindWater, s.remindProtein, s.streakAlert, s.remindSteps).count { it }
     return when (on) {
         0 -> "All off"
-        3 -> "All on"
-        else -> "$on of 3 on"
+        4 -> "All on"
+        else -> "$on of 4 on"
     }
 }
 
@@ -573,14 +592,23 @@ fun NotificationsScreen(
         }
 
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            SectionLabel("Protein and streak")
+            SectionLabel("Protein and diet streak")
             Card {
                 SettingRow("Protein check-in", "Every day at 20:00 if you're short") {
                     Toggle(state.remindProtein, "Protein check-in") { on -> setNotify({ it.copy(remindProtein = on) }, on) }
                 }
                 Divider()
-                SettingRow("Streak alert", "At 21:00 if today's goals aren't hit") {
-                    Toggle(state.streakAlert, "Streak alert") { on -> setNotify({ it.copy(streakAlert = on) }, on) }
+                SettingRow("Diet streak alert", "At 21:00 if water or protein isn't done") {
+                    Toggle(state.streakAlert, "Diet streak alert") { on -> setNotify({ it.copy(streakAlert = on) }, on) }
+                }
+            }
+        }
+
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            SectionLabel("Steps")
+            Card {
+                SettingRow("Step reminder", "At 19:00 if you're short of your step goal") {
+                    Toggle(state.remindSteps, "Step reminder") { on -> setNotify({ it.copy(remindSteps = on) }, on) }
                 }
             }
         }
@@ -817,11 +845,16 @@ fun HistoryScreen(state: AppState, onBack: () -> Unit) {
                             (if (d.today) "Today · " else "") + prettyDate(d.date.toString(), "EEE d MMM"),
                             style = T.bold(15)
                         )
-                        if (d.known && (d.water > 0 || d.protein > 0 || d.today)) {
+                        val daySteps = if (d.today) state.steps else state.history[d.date.toString()]?.steps ?: 0
+                        if (d.known && (d.water > 0 || d.protein > 0 || d.today || daySteps > 0)) {
                             Row {
                                 Text("${fmt(d.water)} ml", style = T.body(13, C.BlueDark))
                                 Text(" · ", style = T.body(13, C.Muted))
                                 Text("${d.protein} g", style = T.body(13, C.OrangeText))
+                                if (daySteps > 0) {
+                                    Text(" · ", style = T.body(13, C.Muted))
+                                    Text("${fmt(daySteps)} steps", style = T.body(13, C.GoldText))
+                                }
                             }
                         } else if (!d.known) {
                             Text("No data", style = T.body(13, C.Muted))

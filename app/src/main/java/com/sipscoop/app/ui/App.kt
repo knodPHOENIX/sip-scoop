@@ -63,13 +63,16 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.dp
 import com.sipscoop.app.data.AppState
+import com.sipscoop.app.steps.StepStatus
 import kotlinx.coroutines.launch
 
 @Composable
 fun AppRoot(
     state: AppState,
     update: ((AppState) -> AppState) -> Unit,
-    onNeedNotificationPermission: () -> Unit
+    onNeedNotificationPermission: () -> Unit,
+    stepStatus: StepStatus = StepStatus.NO_SENSOR,
+    onAskSteps: () -> Unit = {}
 ) {
     var splashDone by rememberSaveable { mutableStateOf(false) }
     val screen = when {
@@ -94,7 +97,7 @@ fun AppRoot(
                     }
                 }
             }
-            else -> MainScreen(state, update, onNeedNotificationPermission)
+            else -> MainScreen(state, update, onNeedNotificationPermission, stepStatus, onAskSteps)
         }
     }
 }
@@ -110,10 +113,13 @@ private const val NOTIFICATIONS = 5
 fun MainScreen(
     state: AppState,
     update: ((AppState) -> AppState) -> Unit,
-    onNeedNotificationPermission: () -> Unit
+    onNeedNotificationPermission: () -> Unit,
+    stepStatus: StepStatus,
+    onAskSteps: () -> Unit
 ) {
     var page by rememberSaveable { mutableIntStateOf(HOME) }
-    val pager = rememberPagerState(pageCount = { 2 })
+    // Steps first, then water, then protein.
+    val pager = rememberPagerState(pageCount = { 3 })
     val scope = rememberCoroutineScope()
 
     var toast by remember { mutableStateOf<String?>(null) }
@@ -166,26 +172,33 @@ fun MainScreen(
                 else -> Column(Modifier.fillMaxSize().background(C.Bg)) {
                     // Fixed top: greeting, streak and profile stay put while the pages slide.
                     Box(Modifier.padding(start = 20.dp, end = 20.dp, top = 18.dp, bottom = 6.dp)) {
-                        GreetingHeader(state.firstName, state.streak, state.avatar) { page = PROFILE }
+                        GreetingHeader(state.firstName, state.stepStreak, state.streak, state.avatar) { page = PROFILE }
                     }
                     PageDots(pager.currentPage + pager.currentPageOffsetFraction)
                     Box(Modifier.weight(1f)) {
                         HorizontalPager(state = pager, beyondViewportPageCount = 1) { t ->
-                            TrackerScreen(if (t == 0) Kind.WATER else Kind.PROTEIN, state, update, onSearchFood = { page = FOOD })
+                            when (t) {
+                                0 -> StepsScreen(state, update, stepStatus, onAskSteps)
+                                1 -> TrackerScreen(Kind.WATER, state, update, onSearchFood = { page = FOOD })
+                                else -> TrackerScreen(Kind.PROTEIN, state, update, onSearchFood = { page = FOOD })
+                            }
                         }
                     }
                     Box(Modifier.fillMaxWidth().height(2.dp).background(C.NavLine))
                     Row(
                         Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 20.dp, vertical = 12.dp),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            .padding(horizontal = 16.dp, vertical = 12.dp),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
-                        NavTab("Water", pager.currentPage == 0, WaterAccent, water = true, modifier = Modifier.weight(1f)) {
+                        NavTab("Steps", pager.currentPage == 0, StepAccent, Ic.SHOE, modifier = Modifier.weight(1f)) {
                             scope.launch { pager.animateScrollToPage(0) }
                         }
-                        NavTab("Protein", pager.currentPage == 1, ProteinAccent, water = false, modifier = Modifier.weight(1f)) {
+                        NavTab("Water", pager.currentPage == 1, WaterAccent, Ic.DROP, modifier = Modifier.weight(1f)) {
                             scope.launch { pager.animateScrollToPage(1) }
+                        }
+                        NavTab("Protein", pager.currentPage == 2, ProteinAccent, Ic.EGG, modifier = Modifier.weight(1f)) {
+                            scope.launch { pager.animateScrollToPage(2) }
                         }
                     }
                 }
@@ -218,24 +231,27 @@ fun MainScreen(
     }
 }
 
-/** Two little pills under the header; the wide one follows your finger while swiping. */
+/** Three little pills under the header; the wide one follows your finger while swiping. */
 @Composable
 private fun PageDots(position: Float) {
-    val p = position.coerceIn(0f, 1f)
+    val p = position.coerceIn(0f, 2f)
+    val colors = listOf(C.Gold, C.Blue, C.Orange)
     Row(
         Modifier.fillMaxWidth().padding(bottom = 6.dp),
         horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally)
     ) {
-        Box(Modifier.size(width = (6 + 12 * (1 - p)).dp, height = 6.dp).background(lerpColor(C.Line, C.Blue, 1 - p), CircleShape))
-        Box(Modifier.size(width = (6 + 12 * p).dp, height = 6.dp).background(lerpColor(C.Line, C.Orange, p), CircleShape))
+        colors.forEachIndexed { i, c ->
+            val near = (1f - kotlin.math.abs(p - i)).coerceIn(0f, 1f)
+            Box(Modifier.size(width = (6 + 12 * near).dp, height = 6.dp).background(lerpColor(C.Line, c, near), CircleShape))
+        }
     }
 }
 
 private fun lerpColor(a: Color, b: Color, t: Float): Color = androidx.compose.ui.graphics.lerp(a, b, t.coerceIn(0f, 1f))
 
-/** Both tabs always wear their own colour; the open one is filled in solid. */
+/** Every tab always wears its own colour; the open one is filled in solid. */
 @Composable
-private fun NavTab(label: String, selected: Boolean, accent: Accent, water: Boolean, modifier: Modifier, onClick: () -> Unit) {
+private fun NavTab(label: String, selected: Boolean, accent: Accent, icon: String, modifier: Modifier, onClick: () -> Unit) {
     val face by animateColorAsState(if (selected) accent.face else accent.soft, tween(250), label = "tabFace")
     val edge by animateColorAsState(if (selected) accent.edge else accent.line, tween(250), label = "tabEdge")
     val textColor by animateColorAsState(if (selected) Color.White else accent.text, tween(250), label = "tabText")
@@ -246,11 +262,11 @@ private fun NavTab(label: String, selected: Boolean, accent: Accent, water: Bool
         edge = edge,
         modifier = modifier,
         depth = 5.dp,
-        contentPadding = PaddingValues(10.dp)
+        contentPadding = PaddingValues(horizontal = 4.dp, vertical = 10.dp)
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            FillIcon(if (water) Ic.DROP else Ic.EGG, iconColor, 22.dp)
-            Text(label, style = T.bold(15, textColor))
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            FillIcon(icon, iconColor, 20.dp)
+            Text(label, style = T.bold(14, textColor), maxLines = 1)
         }
     }
 }

@@ -551,19 +551,19 @@ private fun EditTotalButton(accent: Accent, onClick: () -> Unit) {
     ) { LineIcon(Ic.PENCIL, accent.text, 18.dp) }
 }
 
-/** A small nudge that the protein screen is one swipe away. */
+/** A small nudge that the next screen is one swipe away. */
 @Composable
-private fun SwipeHint() {
+fun SwipeHint(text: String = "Swipe for protein", arrangement: Arrangement.Horizontal = Arrangement.End, modifier: Modifier = Modifier) {
     val inf = rememberInfiniteTransition(label = "hint")
     val dx by inf.animateFloat(0f, -8f, infiniteRepeatable(tween(800, easing = FastOutSlowInEasing), RepeatMode.Reverse), label = "dx")
     Row(
-        Modifier
+        modifier
             .fillMaxWidth()
             .graphicsLayer { translationX = dx * density },
-        horizontalArrangement = Arrangement.End,
+        horizontalArrangement = arrangement,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text("Swipe for protein", style = T.bold(13, C.Muted))
+        Text(text, style = T.bold(13, C.Muted))
         Spacer(Modifier.width(6.dp))
         LineIcon(Ic.BACK, C.Muted, 16.dp, 3f)
     }

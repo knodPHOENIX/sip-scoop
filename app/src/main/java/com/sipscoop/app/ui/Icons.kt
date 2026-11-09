@@ -28,6 +28,12 @@ object Ic {
     const val DROP = "M12 3 C12 3 5 11 5 15 A7 7 0 0 0 19 15 C19 11 12 3 12 3 Z"
     const val EGG = "M12 3 C8.5 3 6 9 6 13.5 A6 6 0 0 0 18 13.5 C18 9 15.5 3 12 3 Z"
     const val BOLT = "M13.5 2 L4.5 13.5 L11 13.5 L9.5 22 L19.5 9.5 L13 9.5 Z"
+    const val PIN = "M12 21 C12 21 5 13.5 5 9 A7 7 0 0 1 19 9 C19 13.5 12 21 12 21 Z M12 6.5 A2.5 2.5 0 1 0 12 11.5 A2.5 2.5 0 1 0 12 6.5 Z"
+    const val FLAME = "M12 22 C7.5 22 5 18.8 5 15.5 C5 11 9 8.5 10 3 C13 5 14 7.5 14 10 C15 9 15.6 8 15.8 6.5 C18 8.5 19 11.8 19 15.5 C19 18.8 16.5 22 12 22 Z"
+    // Running shoe facing left (top bar streak, Steps tab).
+    const val SHOE_BODY = "M22 15.5 V9.6 C22 8.6 21.1 7.9 20.1 8.2 L17.8 8.9 C17 9.1 16.2 8.8 15.7 8.2 L14 6 C13.5 5.4 12.6 5.4 12.1 5.9 C10.4 7.8 8.2 9.2 5.7 9.9 C3.5 10.5 2 11.9 2 13.7 V15.5 Z"
+    const val SHOE_SOLE = "M3.3 15 H20.7 A1.7 1.7 0 0 1 20.7 18.4 H3.3 A1.7 1.7 0 0 1 3.3 15 Z"
+    const val SHOE = SHOE_BODY + " " + SHOE_SOLE
     const val MOON = "M20 14.5 A8 8 0 1 1 9.5 4 A6.5 6.5 0 0 0 20 14.5 Z"
     const val SEARCH = "M10.5 4 A6.5 6.5 0 1 0 10.5 17 A6.5 6.5 0 1 0 10.5 4 Z M15.5 15.5 L20 20"
     const val CLOSE = "M6 6 L18 18 M18 6 L6 18"
@@ -53,5 +59,18 @@ fun LineIcon(d: String, color: Color, size: Dp = 18.dp, width: Float = 2.2f) {
 fun FillIcon(d: String, color: Color, size: Dp = 18.dp) {
     Canvas(Modifier.size(size)) {
         inViewBox(0f, 0f, 24f, 24f) { drawPath(svg(d), color) }
+    }
+}
+
+/** The gold running shoe used for the step streak. */
+@Composable
+fun ShoeIcon(size: Dp = 20.dp, body: Color = C.Yellow, sole: Color = C.YellowDark, laces: Color = Color.White) {
+    Canvas(Modifier.size(size)) {
+        inViewBox(0f, 0f, 24f, 24f) {
+            drawPath(svg(Ic.SHOE_BODY), body)
+            drawPath(svg(Ic.SHOE_SOLE), sole)
+            drawCircle(laces, 0.9f, androidx.compose.ui.geometry.Offset(11.4f, 8.4f))
+            drawCircle(laces, 0.9f, androidx.compose.ui.geometry.Offset(9.4f, 9.7f))
+        }
     }
 }

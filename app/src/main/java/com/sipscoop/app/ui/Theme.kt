@@ -78,6 +78,19 @@ object C {
     val RedEdge: Color get() = pick(0xFFB0301F, 0xFF9E2A1D)
     val PinkSoft: Color get() = pick(0xFFFCE8F1, 0xFF3A1E2D)
     val PinkText: Color get() = pick(0xFFB8327A, 0xFFFF9BC8)
+
+    // Steps: light golden yellow
+    val Gold = Color(0xFFF5B700)
+    val GoldEdge: Color get() = pick(0xFFC99300, 0xFFA37700)
+    val GoldText: Color get() = pick(0xFF8A6100, 0xFFFFD666)
+    val GoldSoft: Color get() = pick(0xFFFFF4CC, 0xFF33290A)
+    val GoldCard: Color get() = pick(0xFFFFF9E6, 0xFF241E0C)
+    val GoldLine: Color get() = pick(0xFFF0DFA8, 0xFF55451A)
+    val GoldTrack: Color get() = pick(0xFFFBEFC6, 0xFF2E2710)
+    val GoldIdle: Color get() = pick(0xFFF3E6BE, 0xFF3A3218)
+    val GoldHit = Color(0xFFF5C83A)
+
+    val BlueStreakLine: Color get() = pick(0xFFB5DDF8, 0xFF1F4F73)
 }
 
 /** Colours for one tracker (water or protein). */
@@ -92,6 +105,7 @@ data class Accent(
 
 val WaterAccent: Accent get() = Accent(C.Blue, C.BlueEdge, C.BlueDark, C.BlueSoft, C.BlueCard, C.Line)
 val ProteinAccent: Accent get() = Accent(C.Orange, C.OrangeDark, C.OrangeText, C.OrangeSoft, C.OrangeCard, C.OrangeLine)
+val StepAccent: Accent get() = Accent(C.Gold, C.GoldEdge, C.GoldText, C.GoldSoft, C.GoldCard, C.GoldLine)
 
 /**
  * Rounded fonts (Baloo 2 for headings, Nunito for text) are downloaded into

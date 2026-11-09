@@ -18,6 +18,8 @@ import com.sipscoop.app.MainActivity
 import com.sipscoop.app.R
 import com.sipscoop.app.data.AppState
 import com.sipscoop.app.data.Store
+import com.sipscoop.app.steps.StepSensor
+import com.sipscoop.app.steps.StepSnapshotReceiver
 import java.io.File
 import java.time.LocalDateTime
 import java.time.LocalTime
@@ -28,6 +30,7 @@ private const val CHANNEL = "reminders"
 private const val ACTION_WATER = "com.sipscoop.app.REMIND_WATER"
 private const val ACTION_PROTEIN = "com.sipscoop.app.REMIND_PROTEIN"
 private const val ACTION_STREAK = "com.sipscoop.app.REMIND_STREAK"
+private const val ACTION_STEPS = "com.sipscoop.app.REMIND_STEPS"
 
 /** Sets up (or clears) the repeating reminders to match the current settings. */
 object Reminders {
@@ -40,7 +43,26 @@ object Reminders {
         am.cancel(water)
         am.cancel(protein)
         am.cancel(streak)
+        val steps = pending(context, ACTION_STEPS, 24)
+        am.cancel(steps)
+        val snapshot = PendingIntent.getBroadcast(
+            context, 25,
+            Intent(context, StepSnapshotReceiver::class.java).setAction(StepSensor.ACTION_SNAPSHOT),
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+        )
+        am.cancel(snapshot)
         if (!s.onboarded) return
+
+        if (StepSensor.available(context)) {
+            // Read the step counter about once an hour so steps stay right across midnight.
+            am.setInexactRepeating(
+                AlarmManager.RTC, System.currentTimeMillis() + AlarmManager.INTERVAL_HOUR,
+                AlarmManager.INTERVAL_HOUR, snapshot
+            )
+            if (s.remindSteps) {
+                am.setInexactRepeating(AlarmManager.RTC_WAKEUP, nextTime(19), AlarmManager.INTERVAL_DAY, steps)
+            }
+        }
 
         val now = System.currentTimeMillis()
         if (s.remindWater) {
@@ -77,7 +99,7 @@ object Reminders {
         if (nm.getNotificationChannel(CHANNEL) == null) {
             nm.createNotificationChannel(
                 NotificationChannel(CHANNEL, "Reminders", NotificationManager.IMPORTANCE_DEFAULT).apply {
-                    description = "Water, protein and streak reminders"
+                    description = "Water, protein, steps and streak reminders"
                 }
             )
         }
@@ -145,9 +167,25 @@ class ReminderReceiver : BroadcastReceiver() {
                 val streak = s.streak
                 Reminders.show(
                     context, 3,
-                    if (streak > 0) "Your $streak-day streak is at risk" else "Still time to hit today's goals",
+                    if (streak > 0) "Your $streak-day diet streak is at risk" else "Still time to hit today's goals",
                     "Finish your water and protein before midnight."
                 )
+            }
+            ACTION_STEPS -> {
+                if (!s.remindSteps) return
+                val pending = goAsync()
+                // Read the latest count first so the message is right.
+                StepSensor.snapshot(context) {
+                    val now = Store.load(context)
+                    if (now.steps < now.stepGoal) {
+                        val left = now.stepGoal - now.steps
+                        Reminders.show(
+                            context, 4, "Time for a quick walk?",
+                            String.format(Locale.US, "You're %,d steps short of %,d. A short walk will do it!", left, now.stepGoal)
+                        )
+                    }
+                    pending.finish()
+                }
             }
         }
     }

@@ -85,6 +85,10 @@ object WidgetSync {
             views.setProgressBar(R.id.protein_bar, 100, proteinPct, false)
             views.setTextViewText(R.id.water_add, "+$waterStep ml")
             views.setTextViewText(R.id.protein_add, "+$proteinStep g")
+            views.setTextViewText(
+                R.id.steps_line,
+                if (s.stepsMet) "Steps ${fmt(s.steps)} · goal done!" else "Steps ${fmt(s.steps)} / ${fmt(s.stepGoal)}"
+            )
         } else {
             views.setTextViewText(R.id.water_value, liters(s.waterTotal))
             views.setTextViewText(R.id.protein_value, "${s.proteinTotal} g")
@@ -97,9 +101,9 @@ object WidgetSync {
         views.setViewVisibility(R.id.normal_group, if (done) View.GONE else View.VISIBLE)
         views.setViewVisibility(R.id.done_group, if (done) View.VISIBLE else View.GONE)
         if (layout == R.layout.widget_wide) {
-            views.setTextViewText(R.id.done_totals, "${liters(s.waterTotal)} water · ${s.proteinTotal} g protein")
+            views.setTextViewText(R.id.done_totals, "${liters(s.waterTotal)} water · ${s.proteinTotal} g protein · ${fmt(s.steps)} steps")
             val streak = s.streak
-            views.setTextViewText(R.id.done_streak, "$streak-day streak")
+            views.setTextViewText(R.id.done_streak, "$streak-day diet streak")
         }
 
         views.setOnClickPendingIntent(R.id.water_add, broadcast(context, cls, ACTION_ADD_WATER, 1))

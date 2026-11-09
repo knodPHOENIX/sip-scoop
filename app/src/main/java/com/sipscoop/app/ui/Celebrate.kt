@@ -135,6 +135,8 @@ fun Fireworks(modifier: Modifier = Modifier) {
 fun CelebrationLayer(state: AppState) {
     val waterDone = state.waterTotal >= state.waterGoal
     val proteinDone = state.proteinTotal >= state.proteinGoal
+    val stepsDone = state.stepsMet
+    var prevSteps by remember { mutableStateOf<Boolean?>(null) }
     var prevWater by remember { mutableStateOf<Boolean?>(null) }
     var prevProtein by remember { mutableStateOf<Boolean?>(null) }
     var banner by remember { mutableStateOf<String?>(null) }
@@ -158,6 +160,14 @@ fun CelebrationLayer(state: AppState) {
         prevWater = waterDone
         prevProtein = proteinDone
     }
+    LaunchedEffect(stepsDone) {
+        if (prevSteps == false && stepsDone) {
+            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+            banner = "steps"
+            bannerKey++
+        }
+        prevSteps = stepsDone
+    }
     LaunchedEffect(bannerKey) {
         if (banner != null) {
             delay(3400)
@@ -177,7 +187,7 @@ fun CelebrationLayer(state: AppState) {
                 .align(Alignment.TopCenter)
                 .padding(start = 16.dp, end = 16.dp, top = 96.dp)
         ) {
-            val isWater = banner != "protein"
+            val kind = banner ?: "water"
             Row(
                 Modifier
                     .fillMaxWidth()
@@ -187,13 +197,26 @@ fun CelebrationLayer(state: AppState) {
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                if (isWater) DripMascot(Modifier.size(42.dp, 60.dp), celebrate = true)
-                else EggMascot(Modifier.size(46.dp, 58.dp), celebrate = true)
+                when (kind) {
+                    "steps" -> StrideMascot(Modifier.size(62.dp, 48.dp), celebrate = true)
+                    "protein" -> EggMascot(Modifier.size(46.dp, 58.dp), celebrate = true)
+                    else -> DripMascot(Modifier.size(42.dp, 60.dp), celebrate = true)
+                }
                 Column {
-                    Text(if (isWater) "Water goal done!" else "Protein goal done!", style = T.display(20))
                     Text(
-                        if (isWater) "${liters(state.waterGoal)} down. Now finish your protein."
-                        else "${state.proteinGoal} g in. Now finish your water.",
+                        when (kind) {
+                            "steps" -> "Step goal smashed!"
+                            "protein" -> "Protein goal done!"
+                            else -> "Water goal done!"
+                        },
+                        style = T.display(20)
+                    )
+                    Text(
+                        when (kind) {
+                            "steps" -> "${fmt(state.stepGoal)} steps today. Step streak: ${state.stepStreak} ${if (state.stepStreak == 1) "day" else "days"}."
+                            "protein" -> "${state.proteinGoal} g in. Now finish your water."
+                            else -> "${liters(state.waterGoal)} down. Now finish your protein."
+                        },
                         style = T.body(14, C.Muted)
                     )
                 }
@@ -232,20 +255,20 @@ fun CelebrationLayer(state: AppState) {
                 Text("Both goals done!", style = T.display(30), textAlign = TextAlign.Center)
                 Text(
                     "${liters(state.waterGoal)} of water and ${state.proteinGoal} g of protein. " +
-                        "Your streak is now $streak ${if (streak == 1) "day" else "days"}, ${state.firstName}.",
+                        "Your diet streak is now $streak ${if (streak == 1) "day" else "days"}, ${state.firstName}.",
                     style = T.body(15, C.Muted),
                     textAlign = TextAlign.Center
                 )
                 Row(
                     Modifier
-                        .background(C.YellowSoft, CircleShape)
-                        .border(2.dp, C.YellowLine, CircleShape)
+                        .background(C.BlueSoft, CircleShape)
+                        .border(2.dp, C.BlueStreakLine, CircleShape)
                         .padding(horizontal = 12.dp, vertical = 6.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
-                    FillIcon(Ic.BOLT, C.Yellow, 18.dp)
-                    Text("$streak-day streak", style = T.bold(15, C.YellowText))
+                    FillIcon(Ic.BOLT, C.Blue, 18.dp)
+                    Text("$streak-day diet streak", style = T.bold(15, C.BlueDark))
                 }
                 Btn3D(
                     onClick = { showBoth = false },

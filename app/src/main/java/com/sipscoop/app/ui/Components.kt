@@ -1,6 +1,7 @@
 package com.sipscoop.app.ui
 
 import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.StartOffset
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.Spring
@@ -206,9 +207,12 @@ fun NumberField(
     )
 }
 
-/** Lightning-bolt streak badge that gives a little zap every few seconds. */
+/**
+ * A streak pill that gives a little wiggle every few seconds.
+ * Gold shoe = step streak; blue lightning bolt = diet streak (water and protein).
+ */
 @Composable
-fun StreakBadge(days: Int) {
+fun StreakBadge(days: Int, steps: Boolean) {
     val inf = rememberInfiniteTransition(label = "zap")
     val rot by inf.animateFloat(
         initialValue = 0f,
@@ -220,34 +224,37 @@ fun StreakBadge(days: Int) {
                 -14f at 3560
                 10f at 3720
                 0f at 3880
-            }
+            },
+            initialStartOffset = StartOffset(if (steps) 0 else 1400)
         ),
         label = "rot"
     )
     Row(
         modifier = Modifier
-            .background(C.YellowSoft, CircleShape)
-            .border(2.dp, C.YellowLine, CircleShape)
-            .padding(start = 8.dp, end = 12.dp, top = 6.dp, bottom = 6.dp),
+            .background(if (steps) C.YellowSoft else C.BlueSoft, CircleShape)
+            .border(2.dp, if (steps) C.YellowLine else C.BlueStreakLine, CircleShape)
+            .padding(start = 6.dp, end = 10.dp, top = 5.dp, bottom = 5.dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(4.dp)
+        horizontalArrangement = Arrangement.spacedBy(3.dp)
     ) {
-        Canvas(
-            Modifier
-                .size(24.dp)
-                .graphicsLayer { rotationZ = rot }
-        ) {
-            inViewBox(0f, 0f, 24f, 24f) {
-                val bolt = Path().apply {
-                    moveTo(13.5f, 2f); lineTo(4.5f, 13.5f); lineTo(11f, 13.5f)
-                    lineTo(9.5f, 22f); lineTo(19.5f, 9.5f); lineTo(13f, 9.5f); close()
+        Box(Modifier.size(21.dp).graphicsLayer { rotationZ = rot }, contentAlignment = Alignment.Center) {
+            if (steps) {
+                ShoeIcon(21.dp)
+            } else {
+                Canvas(Modifier.size(21.dp)) {
+                    inViewBox(0f, 0f, 24f, 24f) {
+                        val bolt = Path().apply {
+                            moveTo(13.5f, 2f); lineTo(4.5f, 13.5f); lineTo(11f, 13.5f)
+                            lineTo(9.5f, 22f); lineTo(19.5f, 9.5f); lineTo(13f, 9.5f); close()
+                        }
+                        drawPath(bolt, C.Blue)
+                        drawPath(bolt, Color(0xFF1477BE), style = Stroke(width = 1.6f, join = StrokeJoin.Round))
+                        drawLine(Color(0xFF9FD8FB), Offset(12.4f, 5.5f), Offset(8f, 11.5f), strokeWidth = 1.6f, cap = StrokeCap.Round)
+                    }
                 }
-                drawPath(bolt, C.Yellow)
-                drawPath(bolt, C.YellowDark, style = Stroke(width = 1.6f, join = StrokeJoin.Round))
-                drawLine(Color(0xFFFFF1A8), Offset(12.4f, 5.5f), Offset(8f, 11.5f), strokeWidth = 1.6f, cap = StrokeCap.Round)
             }
         }
-        Text("$days", style = T.display(18, C.YellowText))
+        Text("$days", style = T.display(17, if (steps) C.YellowText else C.BlueDark))
     }
 }
 
@@ -297,12 +304,12 @@ fun DayIcon(part: DayPart) {
 }
 
 @Composable
-fun GreetingHeader(name: String, streak: Int, avatar: String, onProfile: () -> Unit) {
+fun GreetingHeader(name: String, stepStreak: Int, dietStreak: Int, avatar: String, onProfile: () -> Unit) {
     val (text, part) = greeting()
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(10.dp)
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         Column(Modifier.weight(1f)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -311,7 +318,8 @@ fun GreetingHeader(name: String, streak: Int, avatar: String, onProfile: () -> U
             }
             Text(name, style = T.display(28), maxLines = 1)
         }
-        StreakBadge(streak)
+        StreakBadge(stepStreak, steps = true)
+        StreakBadge(dietStreak, steps = false)
         SquishButton(
             onClick = onProfile,
             background = C.Bg,

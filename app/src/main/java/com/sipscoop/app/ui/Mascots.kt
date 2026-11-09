@@ -264,3 +264,47 @@ fun MascotPair(modifier: Modifier = Modifier, dripColor: Color = Color.White, ce
         }
     }
 }
+
+// ---------------------------------------------------------------- Stride, the step buddy
+
+private const val STRIDE_BODY = "M12 66 C10 46 22 34 38 34 L50 34 C54 20 66 12 78 14 C88 16 92 26 90 36 L104 48 C114 54 116 62 114 68 Z"
+private const val STRIDE_LACES = "M54 30 L68 40 M58 24 L72 34 M50 37 L62 46"
+
+/** Stride the golden sneaker, on a 120×92 grid. [sleepy] is for phones without a step sensor. */
+fun DrawScope.drawStride(celebrate: Boolean = false, blink: Float = 1f, sleepy: Boolean = false) {
+    val body = if (sleepy) Color(0xFFE3CF8E) else C.Gold
+    val soleLine = if (sleepy) Color(0xFFC9B677) else Color(0xFFD99E00)
+    drawPath(svg(STRIDE_BODY), body)
+    if (!sleepy) drawPath(svg(STRIDE_LACES), Color.White, style = Stroke(width = 4f, cap = StrokeCap.Round))
+    drawRoundRect(Color.White, topLeft = Offset(8f, 64f), size = Size(110f, 16f), cornerRadius = androidx.compose.ui.geometry.CornerRadius(8f))
+    drawRoundRect(soleLine, topLeft = Offset(8f, 64f), size = Size(110f, 16f), cornerRadius = androidx.compose.ui.geometry.CornerRadius(8f), style = Stroke(width = 3f))
+    when {
+        sleepy -> {
+            drawPath(svg("M79 49 Q84 52 89 49 M95 55 Q100 58 105 55"), C.Navy, style = Stroke(width = 2.6f, cap = StrokeCap.Round))
+            drawLine(C.Navy, Offset(89f, 62f), Offset(98f, 62f), strokeWidth = 2.6f, cap = StrokeCap.Round)
+        }
+        celebrate -> {
+            drawPath(svg("M79 50 Q84 44 89 50 M95 56 Q100 50 105 56"), C.Navy, style = Stroke(width = 2.8f, cap = StrokeCap.Round))
+            val mouth = Path().apply { moveTo(86f, 59f); quadraticBezierTo(93f, 70f, 101f, 61f); close() }
+            drawPath(mouth, C.Navy)
+        }
+        else -> {
+            scale(1f, blink, Offset(92f, 51f)) {
+                drawCircle(Color.White, 7f, Offset(84f, 48f))
+                drawCircle(Color.White, 6f, Offset(100f, 54f))
+                drawCircle(C.Navy, 3.6f, Offset(86f, 49f))
+                drawCircle(C.Navy, 3.2f, Offset(101f, 55f))
+            }
+            drawPath(svg("M88 60 Q93 65 99 62"), C.Navy, style = Stroke(width = 2.8f, cap = StrokeCap.Round))
+        }
+    }
+    if (!sleepy) drawOval(C.Pink, topLeft = Offset(73.5f, 55.4f), size = Size(9f, 5.2f))
+}
+
+@Composable
+fun StrideMascot(modifier: Modifier = Modifier, celebrate: Boolean = false, alive: Boolean = true, sleepy: Boolean = false) {
+    val blink = if (alive && !sleepy) rememberBlink(1800) else 1f
+    Canvas(modifier.jiggle(alive && !sleepy).mascotTouch(alive && !sleepy)) {
+        inViewBox(0f, 0f, 120f, 92f) { drawStride(celebrate = celebrate, blink = blink, sleepy = sleepy) }
+    }
+}
