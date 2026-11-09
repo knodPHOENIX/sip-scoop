@@ -502,6 +502,11 @@ private fun FoodSheet(
                     if (starred) FillIcon(Ic.STAR, C.Yellow, 22.dp) else LineIcon(Ic.STAR, C.YellowDark, 22.dp, 1.8f)
                 }
             }
+            SquishButton(
+                onClick = onClose,
+                background = C.Faint,
+                contentPadding = PaddingValues(12.dp)
+            ) { LineIcon(Ic.CLOSE, C.Muted, 16.dp, 3f) }
         }
         AnimatedVisibility(visible = starred, enter = expandVertically() + fadeIn(), exit = shrinkVertically() + fadeOut()) {
             Text("Saved to Quick foods as \"$label\"", style = T.body(13, C.YellowText))

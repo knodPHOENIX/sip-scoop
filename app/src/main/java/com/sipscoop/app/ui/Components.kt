@@ -32,7 +32,12 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.AlertDialog
+import androidx.compose.ui.window.Dialog
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.ui.window.DialogProperties
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
@@ -448,6 +453,71 @@ fun NoteBox(text: String, warning: Boolean) {
     }
 }
 
+/**
+ * Every pop-up in the app: a rounded card with a round ✕ in the top-right corner.
+ * Tapping outside or pressing back also closes it. There is no Cancel/Close button.
+ */
+@Composable
+fun Popup(
+    onDismiss: () -> Unit,
+    centered: Boolean = true,
+    content: @Composable ColumnScope.() -> Unit
+) {
+    Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
+        Box(
+            Modifier
+                .padding(horizontal = 22.dp, vertical = 24.dp)
+                .widthIn(max = 420.dp)
+                .fillMaxWidth()
+                .wrapContentHeight()
+                .background(C.Surface, RoundedCornerShape(26.dp))
+        ) {
+            Column(
+                Modifier
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState())
+                    .padding(start = 20.dp, end = 20.dp, top = 24.dp, bottom = 20.dp),
+                horizontalAlignment = if (centered) Alignment.CenterHorizontally else Alignment.Start,
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+                content = content
+            )
+            SquishButton(
+                onClick = onDismiss,
+                background = C.Faint,
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(top = 12.dp, end = 12.dp),
+                contentPadding = PaddingValues(9.dp)
+            ) { LineIcon(Ic.CLOSE, C.Muted, 16.dp, 3f) }
+        }
+    }
+}
+
+/** The single wide main button at the bottom of a pop-up. */
+@Composable
+fun PopupButton(label: String, face: Color, edge: Color, enabled: Boolean = true, onClick: () -> Unit) {
+    Btn3D(
+        onClick = onClick,
+        face = if (enabled) face else C.Grey,
+        edge = if (enabled) edge else C.Line,
+        enabled = enabled,
+        depth = 4.dp, radius = 14.dp,
+        modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
+        contentPadding = PaddingValues(vertical = 11.dp)
+    ) { Text(label, style = T.bold(16, if (enabled) Color.White else C.GreyText)) }
+}
+
+/** Popup title that leaves room for the ✕ when it is left-aligned. */
+@Composable
+fun PopupTitle(text: String, centered: Boolean = true) {
+    Text(
+        text,
+        style = T.display(22),
+        textAlign = if (centered) androidx.compose.ui.text.style.TextAlign.Center else null,
+        modifier = if (centered) Modifier.padding(horizontal = 30.dp) else Modifier.padding(end = 40.dp)
+    )
+}
+
 /** Dialog to type or adjust an amount; optional step buttons and a Delete button. */
 @Composable
 fun AmountDialog(
@@ -475,72 +545,49 @@ fun AmountDialog(
         text = v.coerceIn(0, max).toString()
     }
 
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        containerColor = C.Surface,
-        shape = RoundedCornerShape(24.dp),
-        title = { Text(title, style = T.display(22)) },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    if (step > 0) {
-                        Btn3D(
-                            onClick = { setAmount(maxOf(step, value - step)) },
-                            face = C.Surface, edge = accent.line, border = accent.line,
-                            modifier = Modifier.size(52.dp, 56.dp), contentPadding = PaddingValues(0.dp)
-                        ) { Text("−", style = T.display(24, accent.text)) }
-                    }
-                    NumberField(
-                        value = text,
-                        onValueChange = { v ->
-                            val n = v.toIntOrNull()
-                            hitMax = false
-                            text = v
-                            if (n != null && n > max) setAmount(max)
-                        },
-                        label = "Amount", suffix = unit,
-                        accent = accent, modifier = Modifier.weight(1f)
-                    )
-                    if (step > 0) {
-                        Btn3D(
-                            onClick = {
-                                hitMax = atMax
-                                if (!atMax) setAmount(value + step)
-                            },
-                            face = if (atMax) C.Faint else C.Surface,
-                            edge = accent.line, border = accent.line,
-                            modifier = Modifier.size(52.dp, 56.dp), contentPadding = PaddingValues(0.dp)
-                        ) { Text("+", style = T.display(24, if (atMax) C.Line else accent.text)) }
-                    }
-                }
-                if (warn != null) NoteBox(warn, warning = true)
-                else if ((hitMax || atMax) && maxNote != null) NoteBox(maxNote, warning = false)
-            }
-        },
-        confirmButton = {
-            Btn3D(
-                onClick = { if (value > 0) onConfirm(value) },
-                face = if (value > 0) accent.face else C.Grey,
-                edge = if (value > 0) accent.edge else C.Line,
-                enabled = value > 0, fill = false, depth = 4.dp,
-                contentPadding = PaddingValues(horizontal = 18.dp, vertical = 8.dp)
-            ) { Text(confirmLabel, style = T.bold(15, if (value > 0) Color.White else C.GreyText)) }
-        },
-        dismissButton = {
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                if (onDelete != null) {
-                    Btn3D(
-                        onClick = onDelete, face = C.Surface, edge = C.RedLine, border = C.RedLine,
-                        fill = false, depth = 4.dp,
-                        contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp)
-                    ) { Text("Delete", style = T.bold(15, C.Red)) }
-                }
+    Popup(onDismiss = onDismiss, centered = false) {
+        PopupTitle(title, centered = false)
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            if (step > 0) {
                 Btn3D(
-                    onClick = onDismiss, face = C.Surface, edge = C.Line,
-                    fill = false, depth = 4.dp,
-                    contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp)
-                ) { Text("Cancel", style = T.bold(15, C.Muted)) }
+                    onClick = { setAmount(maxOf(step, value - step)) },
+                    face = C.Surface, edge = accent.line, border = accent.line,
+                    modifier = Modifier.size(52.dp, 56.dp), contentPadding = PaddingValues(0.dp)
+                ) { Text("−", style = T.display(24, accent.text)) }
+            }
+            NumberField(
+                value = text,
+                onValueChange = { v ->
+                    val n = v.toIntOrNull()
+                    hitMax = false
+                    text = v
+                    if (n != null && n > max) setAmount(max)
+                },
+                label = "Amount", suffix = unit,
+                accent = accent, modifier = Modifier.weight(1f)
+            )
+            if (step > 0) {
+                Btn3D(
+                    onClick = {
+                        hitMax = atMax
+                        if (!atMax) setAmount(value + step)
+                    },
+                    face = if (atMax) C.Faint else C.Surface,
+                    edge = accent.line, border = accent.line,
+                    modifier = Modifier.size(52.dp, 56.dp), contentPadding = PaddingValues(0.dp)
+                ) { Text("+", style = T.display(24, if (atMax) C.Line else accent.text)) }
             }
         }
-    )
+        if (warn != null) NoteBox(warn, warning = true)
+        else if ((hitMax || atMax) && maxNote != null) NoteBox(maxNote, warning = false)
+        PopupButton(confirmLabel, accent.face, accent.edge, enabled = value > 0) { if (value > 0) onConfirm(value) }
+        if (onDelete != null) {
+            Btn3D(
+                onClick = onDelete, face = C.Surface, edge = C.RedLine, border = C.RedLine,
+                depth = 4.dp, radius = 14.dp,
+                modifier = Modifier.fillMaxWidth(),
+                contentPadding = PaddingValues(vertical = 9.dp)
+            ) { Text("Delete", style = T.bold(15, C.Red)) }
+        }
+    }
 }

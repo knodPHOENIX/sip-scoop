@@ -42,7 +42,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
@@ -99,10 +98,8 @@ private fun MenuRow(
     title: String,
     iconBg: Color,
     icon: @Composable () -> Unit,
-    subtitle: String? = null,
+    value: String? = null,
     showDivider: Boolean = true,
-    titleColor: Color = C.Ink,
-    chevron: Boolean = true,
     onClick: () -> Unit
 ) {
     Column {
@@ -110,18 +107,21 @@ private fun MenuRow(
             Modifier
                 .fillMaxWidth()
                 .clickable(onClick = onClick)
-                .padding(horizontal = 14.dp, vertical = 11.dp),
+                .padding(horizontal = 12.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
+            horizontalArrangement = Arrangement.spacedBy(11.dp)
         ) {
-            IconSquare(iconBg, icon)
-            Column(Modifier.weight(1f)) {
-                Text(title, style = T.bold(16, titleColor))
-                if (subtitle != null) Text(subtitle, style = T.body(13, C.Muted))
-            }
-            if (chevron) LineIcon(Ic.CHEVRON, C.Muted, 18.dp, 2.5f)
+            Box(
+                Modifier
+                    .size(30.dp)
+                    .background(iconBg, RoundedCornerShape(9.dp)),
+                contentAlignment = Alignment.Center
+            ) { icon() }
+            Text(title, style = T.bold(15), modifier = Modifier.weight(1f), maxLines = 1)
+            if (value != null) Text(value, style = T.body(13, C.Muted), maxLines = 1)
+            LineIcon(Ic.CHEVRON, C.Muted, 16.dp, 2.5f)
         }
-        if (showDivider) Box(Modifier.fillMaxWidth().height(2.dp).background(C.NavLine))
+        if (showDivider) Box(Modifier.fillMaxWidth().height(1.5.dp).background(C.NavLine))
     }
 }
 
@@ -155,7 +155,7 @@ fun Toggle(on: Boolean, label: String, onChange: (Boolean) -> Unit) {
     }
 }
 
-/** A plain pop-up with an icon, a message and two buttons. */
+/** A plain pop-up with an icon, a message and one main button. Close with the ✕. */
 @Composable
 fun MessageDialog(
     title: String,
@@ -165,37 +165,16 @@ fun MessageDialog(
     confirmEdge: Color,
     onConfirm: () -> Unit,
     onDismiss: () -> Unit,
-    dismissLabel: String? = "Cancel",
     icon: @Composable () -> Unit = {},
     extra: @Composable () -> Unit = {}
 ) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        containerColor = C.Surface,
-        shape = RoundedCornerShape(24.dp),
-        icon = icon,
-        title = { Text(title, style = T.display(22), textAlign = TextAlign.Center) },
-        text = {
-            Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text(body, style = T.body(15, C.Muted), textAlign = TextAlign.Center)
-                extra()
-            }
-        },
-        confirmButton = {
-            Btn3D(
-                onClick = onConfirm, face = confirmFace, edge = confirmEdge, fill = false, depth = 4.dp,
-                contentPadding = PaddingValues(horizontal = 18.dp, vertical = 8.dp)
-            ) { Text(confirmLabel, style = T.bold(15, Color.White)) }
-        },
-        dismissButton = {
-            if (dismissLabel != null) {
-                Btn3D(
-                    onClick = onDismiss, face = C.Surface, edge = C.Line, fill = false, depth = 4.dp,
-                    contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp)
-                ) { Text(dismissLabel, style = T.bold(15, C.Muted)) }
-            }
-        }
-    )
+    Popup(onDismiss = onDismiss) {
+        icon()
+        PopupTitle(title)
+        Text(body, style = T.body(15, C.Muted), textAlign = TextAlign.Center)
+        extra()
+        PopupButton(confirmLabel, confirmFace, confirmEdge, onClick = onConfirm)
+    }
 }
 
 /** The six characters as big tiles; the chosen one gets a blue border and a tick. */
@@ -252,8 +231,7 @@ fun ProfileScreen(
     val version = remember {
         runCatching { context.packageManager.getPackageInfo(context.packageName, 0).versionName }.getOrNull() ?: ""
     }
-    var showName by remember { mutableStateOf(false) }
-    var showPicture by remember { mutableStateOf(false) }
+    var showEdit by remember { mutableStateOf(false) }
     var showReset by remember { mutableStateOf(false) }
     var showShare by remember { mutableStateOf(false) }
     var showLogout by remember { mutableStateOf(false) }
@@ -263,68 +241,65 @@ fun ProfileScreen(
             Modifier
                 .weight(1f)
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = 20.dp, vertical = 18.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+                .padding(horizontal = 18.dp, vertical = 14.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             TopBar("Profile", onBack)
 
-            Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                Box(Modifier.size(108.dp)) {
-                    Box(
-                        Modifier
-                            .size(104.dp)
-                            .border(4.dp, C.BlueSoft, CircleShape)
-                            .padding(6.dp)
-                    ) { AvatarImage(state.avatar, Modifier.fillMaxSize()) }
-                    SquishButton(
-                        onClick = { showPicture = true },
-                        background = C.Blue,
-                        modifier = Modifier.align(Alignment.BottomEnd),
-                        borderColor = C.Bg,
-                        contentPadding = PaddingValues(9.dp)
-                    ) { LineIcon(Ic.PENCIL, Color.White, 16.dp, 2.4f) }
-                }
-                Text(state.name.ifBlank { "Friend" }, style = T.display(26))
-                Text("${state.age} years · tracking since ${prettyDate(state.since, "d MMM")}", style = T.body(14, C.Muted))
+            Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                // Tapping the avatar opens Edit profile. No pencil on purpose: it's there to be discovered.
+                SquishButton(
+                    onClick = { showEdit = true },
+                    background = C.BlueSoft,
+                    borderColor = C.Blue,
+                    contentPadding = PaddingValues(5.dp)
+                ) { AvatarImage(state.avatar, Modifier.size(80.dp)) }
+                Text(state.name.ifBlank { "Friend" }, style = T.display(24), modifier = Modifier.padding(top = 4.dp))
+                Text("${state.age} years · tracking since ${prettyDate(state.since, "d MMM")}", style = T.body(13, C.Muted))
             }
 
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                StatTile(Modifier.weight(1f), C.YellowSoft, { FillIcon(Ic.BOLT, C.Yellow, 20.dp) }, "${state.streak} ${if (state.streak == 1) "day" else "days"}", C.YellowText, "Streak")
-                StatTile(Modifier.weight(1f), C.BlueCard, { FillIcon(Ic.DROP, C.Blue, 20.dp) }, liters(state.waterGoal), C.BlueDark, "Water goal")
-                StatTile(Modifier.weight(1f), C.OrangeCard, { FillIcon(Ic.EGG, C.Orange, 20.dp) }, "${state.proteinGoal} g", C.OrangeText, "Protein goal")
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                StatTile(Modifier.weight(1f), C.YellowSoft, { FillIcon(Ic.BOLT, C.Yellow, 18.dp) }, "${state.streak} ${if (state.streak == 1) "day" else "days"}", C.YellowText, "Streak")
+                StatTile(Modifier.weight(1f), C.BlueSoft, { FillIcon(Ic.DROP, C.Blue, 18.dp) }, liters(state.waterGoal), C.BlueDark, "Water goal")
+                StatTile(Modifier.weight(1f), C.OrangeSoft, { FillIcon(Ic.EGG, C.Orange, 18.dp) }, "${state.proteinGoal} g", C.OrangeText, "Protein goal")
             }
 
             Card {
-                MenuRow("Change name", C.BlueSoft, { LineIcon(Ic.PENCIL, C.BlueDark) }) { showName = true }
                 MenuRow(
-                    "Appearance", C.Faint,
-                    { if (ThemeState.dark) FillIcon(Ic.MOON, Color(0xFF7B86D9), 18.dp) else DayIcon(DayPart.DAY) },
-                    subtitle = themeLabel(state.themeMode), onClick = onAppearance
+                    "Appearance", C.YellowSoft,
+                    { if (ThemeState.dark) FillIcon(Ic.MOON, Color(0xFF9AA4F0), 17.dp) else DayIcon(DayPart.DAY) },
+                    value = themeLabel(state.themeMode).replace("Same as phone", "System"), onClick = onAppearance
                 )
                 MenuRow(
-                    "Notifications", C.YellowSoft, { LineIcon(Ic.BELL, C.YellowText, 18.dp, 2.2f) },
-                    subtitle = notifySummary(state), onClick = onNotifications
+                    "Notifications", C.YellowSoft, { LineIcon(Ic.BELL, C.YellowText, 17.dp, 2.2f) },
+                    value = notifySummary(state), onClick = onNotifications
                 )
-                MenuRow("History", C.GreenSoft, { LineIcon(Ic.BARS, C.GreenText, 18.dp, 3f) }, onClick = onHistory)
-                MenuRow("Reset today's readings", C.OrangeSoft, { LineIcon(Ic.RESET, C.OrangeText, 18.dp, 2.4f) }) { showReset = true }
-                MenuRow("Report a bug", C.RedSoft, { LineIcon(Ic.BUG, C.Red, 18.dp, 2f) }) { showBug = true }
-                MenuRow("Refer a friend", C.PinkSoft, { LineIcon(Ic.GIFT, C.PinkText, 18.dp, 2f) }, showDivider = false) { showShare = true }
+                MenuRow("History", C.GreenSoft, { LineIcon(Ic.BARS, C.GreenText, 17.dp, 3f) }, onClick = onHistory)
+                MenuRow("Reset today's readings", C.OrangeSoft, { LineIcon(Ic.RESET, C.OrangeText, 17.dp, 2.4f) }) { showReset = true }
+                MenuRow("Report a bug", C.RedSoft, { LineIcon(Ic.BUG, C.Red, 17.dp, 2f) }) { showBug = true }
+                MenuRow("Refer a friend", C.PinkSoft, { LineIcon(Ic.GIFT, C.PinkText, 17.dp, 2f) }, showDivider = false) { showShare = true }
             }
 
-            Box(
+            Row(
                 Modifier
                     .fillMaxWidth()
-                    .background(C.RedSoft, RoundedCornerShape(18.dp))
-                    .border(2.dp, C.RedLine, RoundedCornerShape(18.dp))
+                    .background(C.RedSoft, RoundedCornerShape(14.dp))
+                    .border(2.dp, C.RedLine, RoundedCornerShape(14.dp))
+                    .clickable { showLogout = true }
+                    .padding(vertical = 11.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center
             ) {
-                MenuRow("Log out", C.Surface, { LineIcon(Ic.LOGOUT, C.Red) }, showDivider = false, titleColor = C.Red, chevron = false) { showLogout = true }
+                LineIcon(Ic.LOGOUT, C.Red, 18.dp)
+                Spacer(Modifier.size(8.dp))
+                Text("Log out", style = T.bold(15, C.Red))
             }
         }
 
         Column(
             Modifier
                 .fillMaxWidth()
-                .padding(top = 12.dp, bottom = 18.dp),
+                .padding(top = 6.dp, bottom = 14.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(3.dp)
         ) {
@@ -346,86 +321,13 @@ fun ProfileScreen(
 
     if (showBug) BugDialog(onClose = { showBug = false })
 
-    if (showName) {
-        var text by remember { mutableStateOf(state.name) }
-        AlertDialog(
-            onDismissRequest = { showName = false },
-            containerColor = C.Surface,
-            shape = RoundedCornerShape(24.dp),
-            title = { Text("Change name", style = T.display(22)) },
-            text = {
-                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    OutlinedTextField(
-                        value = text,
-                        onValueChange = { text = it.take(30) },
-                        singleLine = true,
-                        label = { Text("Your name") },
-                        keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Words),
-                        textStyle = T.bold(18),
-                        shape = RoundedCornerShape(14.dp),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = C.Blue, unfocusedBorderColor = C.Line,
-                            focusedLabelColor = C.BlueDark, unfocusedLabelColor = C.Muted, cursorColor = C.Blue
-                        ),
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    Text("Shown in your greeting at the top.", style = T.body(13, C.Muted))
-                }
-            },
-            confirmButton = {
-                val ok = text.isNotBlank()
-                Btn3D(
-                    onClick = {
-                        if (ok) {
-                            update { it.copy(name = text.trim()) }
-                            showName = false
-                        }
-                    },
-                    face = if (ok) C.Blue else C.Grey, edge = if (ok) C.BlueEdge else C.Line,
-                    enabled = ok, fill = false, depth = 4.dp,
-                    contentPadding = PaddingValues(horizontal = 18.dp, vertical = 8.dp)
-                ) { Text("Save", style = T.bold(15, if (ok) Color.White else C.GreyText)) }
-            },
-            dismissButton = {
-                Btn3D(
-                    onClick = { showName = false }, face = C.Surface, edge = C.Line, fill = false, depth = 4.dp,
-                    contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp)
-                ) { Text("Cancel", style = T.bold(15, C.Muted)) }
-            }
-        )
-    }
-
-    if (showPicture) {
-        var pick by remember { mutableStateOf(state.avatar) }
-        AlertDialog(
-            onDismissRequest = { showPicture = false },
-            containerColor = C.Surface,
-            shape = RoundedCornerShape(24.dp),
-            title = {
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    AvatarImage(pick, Modifier.size(56.dp))
-                    Column {
-                        Text("Change picture", style = T.display(22))
-                        Text("Tap a character to preview it.", style = T.body(13, C.Muted))
-                    }
-                }
-            },
-            text = { AvatarGrid(pick, { pick = it }, tile = 64) },
-            confirmButton = {
-                Btn3D(
-                    onClick = {
-                        update { it.copy(avatar = pick) }
-                        showPicture = false
-                    },
-                    face = C.Blue, edge = C.BlueEdge, fill = false, depth = 4.dp,
-                    contentPadding = PaddingValues(horizontal = 18.dp, vertical = 8.dp)
-                ) { Text("Use this picture", style = T.bold(15, Color.White)) }
-            },
-            dismissButton = {
-                Btn3D(
-                    onClick = { showPicture = false }, face = C.Surface, edge = C.Line, fill = false, depth = 4.dp,
-                    contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp)
-                ) { Text("Cancel", style = T.bold(15, C.Muted)) }
+    if (showEdit) {
+        EditProfileDialog(
+            state = state,
+            onDismiss = { showEdit = false },
+            onSave = { name, avatar ->
+                update { it.copy(name = name, avatar = avatar) }
+                showEdit = false
             }
         )
     }
@@ -441,7 +343,6 @@ fun ProfileScreen(
                 showReset = false
             },
             onDismiss = { showReset = false },
-            dismissLabel = "Keep them",
             icon = { IconSquare(C.OrangeSoft) { LineIcon(Ic.RESET, C.OrangeText, 22.dp, 2.4f) } }
         )
     }
@@ -489,16 +390,17 @@ fun ProfileScreen(
 
 @Composable
 private fun StatTile(modifier: Modifier, bg: Color, icon: @Composable () -> Unit, value: String, valueColor: Color, label: String) {
+    // Icon, value and title share one centre line so the tile is perfectly symmetric.
     Column(
         modifier
-            .background(bg, RoundedCornerShape(16.dp))
-            .padding(vertical = 10.dp, horizontal = 6.dp),
+            .background(bg, RoundedCornerShape(14.dp))
+            .padding(vertical = 8.dp, horizontal = 4.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(2.dp)
+        verticalArrangement = Arrangement.spacedBy(1.dp)
     ) {
-        icon()
-        Text(value, style = T.display(19, valueColor), maxLines = 1)
-        Text(label, style = T.body(12, C.Muted), maxLines = 1)
+        Box(Modifier.size(20.dp), contentAlignment = Alignment.Center) { icon() }
+        Text(value, style = T.bold(16, valueColor), maxLines = 1, textAlign = TextAlign.Center)
+        Text(label, style = T.body(12, C.Muted), maxLines = 1, textAlign = TextAlign.Center)
     }
 }
 
@@ -712,7 +614,6 @@ fun BugDialog(onClose: () -> Unit) {
             if (opened) onClose()
         },
         onDismiss = onClose,
-        dismissLabel = "Close",
         icon = { IconSquare(C.RedSoft) { LineIcon(Ic.BUG, C.Red, 22.dp, 2f) } },
         extra = {
             Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -987,5 +888,78 @@ fun emailSupport(context: android.content.Context): Boolean {
         true
     } catch (e: android.content.ActivityNotFoundException) {
         false
+    }
+}
+
+// ---------------------------------------------------------------- edit profile
+
+/** Opens from a tap on the profile picture: pick a character and change the name in one place. */
+@Composable
+fun EditProfileDialog(state: AppState, onDismiss: () -> Unit, onSave: (String, String) -> Unit) {
+    var name by remember { mutableStateOf(state.name) }
+    var pick by remember { mutableStateOf(state.avatar) }
+    val ok = name.isNotBlank()
+    Popup(onDismiss = onDismiss) {
+        Box(
+            Modifier
+                .size(84.dp)
+                .background(C.BlueSoft, CircleShape)
+                .border(3.dp, C.Blue, CircleShape)
+                .padding(6.dp)
+        ) {
+            AnimatedContent(
+                targetState = pick,
+                transitionSpec = { (fadeIn(tween(180)) togetherWith fadeOut(tween(120))) },
+                label = "avatar"
+            ) { id -> AvatarImage(id, Modifier.fillMaxSize()) }
+        }
+        PopupTitle("Edit profile")
+        Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Text("Your name", style = T.bold(13, C.Muted))
+            OutlinedTextField(
+                value = name,
+                onValueChange = { name = it.take(30) },
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Words),
+                textStyle = T.bold(17),
+                shape = RoundedCornerShape(14.dp),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = C.Blue, unfocusedBorderColor = C.Line, cursorColor = C.Blue
+                ),
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
+        Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text("Character", style = T.bold(13, C.Muted))
+            AVATAR_IDS.chunked(3).forEach { row ->
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    row.forEach { id ->
+                        val sel = id == pick
+                        Box(Modifier.weight(1f)) {
+                            SquishButton(
+                                onClick = { pick = id },
+                                background = if (sel) C.BlueSoft else C.Faint,
+                                shape = RoundedCornerShape(16.dp),
+                                borderColor = if (sel) C.Blue else C.Line,
+                                modifier = Modifier.fillMaxWidth(),
+                                contentPadding = PaddingValues(vertical = 8.dp)
+                            ) { AvatarImage(id, Modifier.size(54.dp).align(Alignment.Center)) }
+                            if (sel) {
+                                Box(
+                                    Modifier
+                                        .align(Alignment.TopEnd)
+                                        .offset(x = 6.dp, y = (-6).dp)
+                                        .size(22.dp)
+                                        .background(C.Blue, CircleShape)
+                                        .border(2.dp, C.Surface, CircleShape),
+                                    contentAlignment = Alignment.Center
+                                ) { LineIcon(Ic.CHECK, Color.White, 11.dp, 4f) }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        PopupButton("Save", C.Blue, C.BlueEdge, enabled = ok) { if (ok) onSave(name.trim(), pick) }
     }
 }

@@ -16,7 +16,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -59,17 +58,11 @@ fun EditReadingDialog(
         }
     }
 
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        containerColor = C.Surface,
-        shape = RoundedCornerShape(24.dp),
-        title = {
-            Column {
+    Popup(onDismiss = onDismiss, centered = false) {
+            Column(Modifier.padding(end = 40.dp)) {
                 Text(if (isWater) "Edit today's water" else "Edit today's protein", style = T.display(22))
                 Text("Fix a wrong entry or set the total yourself.", style = T.body(14, C.Muted))
             }
-        },
-        text = {
             Column(
                 modifier = Modifier
                     .heightIn(max = 440.dp)
@@ -189,21 +182,8 @@ fun EditReadingDialog(
                     Text("Today's entries will be replaced by this one total.", style = T.body(13, C.Muted))
                 }
             }
-        },
-        confirmButton = {
-            Btn3D(
-                onClick = { save() },
-                face = accent.face, edge = accent.edge, fill = false, depth = 4.dp,
-                contentPadding = PaddingValues(horizontal = 18.dp, vertical = 8.dp)
-            ) { Text("Save changes", style = T.bold(15, Color.White)) }
-        },
-        dismissButton = {
-            Btn3D(
-                onClick = onDismiss, face = C.Surface, edge = C.Line, fill = false, depth = 4.dp,
-                contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp)
-            ) { Text("Cancel", style = T.bold(15, C.Muted)) }
-        }
-    )
+            PopupButton("Save changes", accent.face, accent.edge) { save() }
+    }
 }
 
 private fun clampText(v: String, max: Int): String {
