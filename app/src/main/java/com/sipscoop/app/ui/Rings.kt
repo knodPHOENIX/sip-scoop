@@ -149,7 +149,7 @@ fun RingChips(state: AppState, position: Float, stepsOn: Boolean, onPick: (Int) 
     val accents = listOf(StepAccent, WaterAccent, ProteinAccent)
     Row(
         Modifier.fillMaxWidth().padding(horizontal = 16.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally)
+        horizontalArrangement = Arrangement.spacedBy(6.dp)
     ) {
         names.forEachIndexed { i, name ->
             val on = i == current
@@ -159,15 +159,16 @@ fun RingChips(state: AppState, position: Float, stepsOn: Boolean, onPick: (Int) 
             val pct = (state.fraction(i, stepsOn) * 100).toInt()
             Row(
                 Modifier
+                    .weight(1f)
                     .background(bg, CircleShape)
                     .border(2.dp, edge, CircleShape)
                     .clickable { onPick(i) }
-                    .padding(horizontal = 12.dp, vertical = 6.dp),
+                    .padding(horizontal = 6.dp, vertical = 6.dp),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                horizontalArrangement = Arrangement.spacedBy(5.dp, Alignment.CenterHorizontally)
             ) {
-                Box(Modifier.size(9.dp).background(dots[i], CircleShape))
-                Text("$name $pct%", style = T.bold(13, text), maxLines = 1)
+                Box(Modifier.size(8.dp).background(dots[i], CircleShape))
+                Text("$name $pct%", style = T.bold(12, text), maxLines = 1, softWrap = false)
             }
         }
     }

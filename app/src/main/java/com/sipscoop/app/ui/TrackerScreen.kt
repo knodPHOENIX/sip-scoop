@@ -170,13 +170,22 @@ fun TrackerScreen(
         modifier = Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .padding(start = 20.dp, end = 20.dp, top = 6.dp, bottom = 18.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+            .padding(start = 20.dp, end = 20.dp, top = if (compact) 0.dp else 6.dp, bottom = 18.dp),
+        verticalArrangement = Arrangement.spacedBy(if (compact) 12.dp else 16.dp)
     ) {
-        Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            Hopping(bump, Modifier.padding(top = 18.dp)) {
-                if (isWater) DripMascot(Modifier.size(56.dp, 82.dp), celebrate = fraction >= 1f)
-                else EggMascot(Modifier.size(58.dp, 74.dp), celebrate = fraction >= 1f)
+        Row(
+            verticalAlignment = if (compact) Alignment.CenterVertically else Alignment.Bottom,
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            if (compact) {
+                // Small mascot, no hop room above it: the rings already take the top of the screen.
+                if (isWater) DripMascot(Modifier.size(38.dp, 54.dp), celebrate = fraction >= 1f)
+                else EggMascot(Modifier.size(42.dp, 54.dp), celebrate = fraction >= 1f)
+            } else {
+                Hopping(bump, Modifier.padding(top = 18.dp)) {
+                    if (isWater) DripMascot(Modifier.size(56.dp, 82.dp), celebrate = fraction >= 1f)
+                    else EggMascot(Modifier.size(58.dp, 74.dp), celebrate = fraction >= 1f)
+                }
             }
             AnimatedContent(
                 targetState = msg,
@@ -192,13 +201,10 @@ fun TrackerScreen(
 
         if (compact) {
             Box(Modifier.fillMaxWidth()) {
-                Row(
-                    Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Pill(if (isWater) "Goal ${liters(goal)} · edit" else "Goal $goal g · edit", accent) { showGoal = true }
-                    Pill("Edit today", accent) { showEditAll = true }
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    WidePill(if (isWater) "Goal ${liters(goal)}" else "Goal $goal g", accent, Modifier.weight(1f)) { showGoal = true }
+                    WidePill("Edit today", accent, Modifier.weight(1f)) { showEditAll = true }
+                    WidePill(if (editing) "Done" else "Edit amounts", accent, Modifier.weight(1f)) { editing = !editing }
                 }
                 PopLayer(pops, accent.text, Modifier.align(Alignment.TopCenter).fillMaxWidth().height(40.dp))
             }
@@ -261,9 +267,11 @@ fun TrackerScreen(
 
         // Quick add
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                SectionLabel("Quick add")
-                Pill(if (editing) "Done" else "Edit amounts", accent) { editing = !editing }
+            if (!compact) {
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                    SectionLabel("Quick add")
+                    Pill(if (editing) "Done" else "Edit amounts", accent) { editing = !editing }
+                }
             }
             val cols = if (isWater) 2 else 4
             val cells = quick.indices.toList() + listOf(-1)
@@ -588,5 +596,22 @@ fun SwipeHint(text: String = "Swipe for protein", arrangement: Arrangement.Horiz
         Text(text, style = T.bold(13, C.Muted))
         Spacer(Modifier.width(6.dp))
         LineIcon(Ic.BACK, C.Muted, 16.dp, 3f)
+    }
+}
+
+/** A pill that shares the row equally with its neighbours (rings view). */
+@Composable
+private fun WidePill(text: String, accent: Accent, modifier: Modifier, onClick: () -> Unit) {
+    SquishButton(
+        onClick = onClick,
+        background = accent.soft,
+        modifier = modifier,
+        contentPadding = PaddingValues(horizontal = 6.dp, vertical = 8.dp)
+    ) {
+        Text(
+            text, style = T.bold(13, accent.text), maxLines = 1,
+            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+            modifier = Modifier.fillMaxWidth().align(Alignment.Center)
+        )
     }
 }

@@ -125,12 +125,15 @@ private fun StepsToday(state: AppState, update: ((AppState) -> AppState) -> Unit
         Column(
             Modifier
                 .fillMaxSize()
-                .padding(start = 20.dp, end = 20.dp, top = 6.dp, bottom = 12.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp)
+                .padding(start = 20.dp, end = 20.dp, top = if (compact) 0.dp else 6.dp, bottom = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(if (compact) 12.dp else 14.dp)
         ) {
-            Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                Box(Modifier.padding(top = 14.dp)) {
-                    StrideMascot(Modifier.size(66.dp, 51.dp), celebrate = fraction >= 1f)
+            Row(
+                verticalAlignment = if (compact) Alignment.CenterVertically else Alignment.Bottom,
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                Box(Modifier.padding(top = if (compact) 0.dp else 14.dp)) {
+                    StrideMascot(Modifier.size(if (compact) 56.dp else 66.dp, if (compact) 43.dp else 51.dp), celebrate = fraction >= 1f)
                 }
                 AnimatedContent(
                     targetState = msg,

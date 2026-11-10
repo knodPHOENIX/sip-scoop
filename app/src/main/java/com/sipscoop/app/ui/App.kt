@@ -189,10 +189,10 @@ fun MainScreen(
                             SharedRings(
                                 state, pos, stepStatus == StepStatus.ON,
                                 onPick = { i -> scope.launch { pager.animateScrollToPage(i) } },
-                                modifier = Modifier.size(232.dp)
+                                modifier = Modifier.size(220.dp)
                             )
                         }
-                        Spacer(Modifier.height(8.dp))
+                        Spacer(Modifier.height(6.dp))
                         RingChips(state, pos, stepStatus == StepStatus.ON) { i -> scope.launch { pager.animateScrollToPage(i) } }
                         Spacer(Modifier.height(10.dp))
                     } else {

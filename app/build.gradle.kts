@@ -12,8 +12,8 @@ android {
         applicationId = "com.sipscoop.app"
         minSdk = 26
         targetSdk = 34
-        versionCode = 10
-        versionName = "1.5.0"
+        versionCode = 11
+        versionName = "1.5.1"
     }
 
     // A fixed personal key, so every new build installs over the old one
