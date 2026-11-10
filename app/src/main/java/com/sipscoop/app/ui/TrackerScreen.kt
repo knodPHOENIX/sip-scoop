@@ -331,12 +331,8 @@ fun TrackerScreen(
 
         if (isWater && !compact) SwipeHint()
         if (!isWater && compact) FoodSearchBar(onClick = onSearchFood)
-        if (compact) {
-            WeekBars(
-                state, if (isWater) Track.WATER else Track.PROTEIN,
-                if (isWater) "Water this week" else "Protein this week",
-                Modifier.fillMaxWidth().height(190.dp)
-            )
+        if (compact && isWater) {
+            WeekBars(state, Track.WATER, "Water this week", Modifier.fillMaxWidth().height(190.dp))
         }
 
         // Quick foods (protein only)
@@ -381,6 +377,11 @@ fun TrackerScreen(
                     }
                 }
             }
+        }
+
+        // Protein in rings view: quick foods first, the weekly chart just below (scroll for it).
+        if (compact && !isWater) {
+            WeekBars(state, Track.PROTEIN, "Protein this week", Modifier.fillMaxWidth().height(190.dp))
         }
 
         // Today's log

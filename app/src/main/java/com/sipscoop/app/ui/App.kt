@@ -55,6 +55,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
@@ -301,6 +302,7 @@ private fun NavTab(label: String, selected: Boolean, accent: Accent, icon: Strin
 /** The blue loading screen with bouncing mascots and a filling bar. */
 @Composable
 fun Splash(onDone: () -> Unit) {
+    val context = androidx.compose.ui.platform.LocalContext.current
     val load = remember { Animatable(0.06f) }
     LaunchedEffect(Unit) {
         load.animateTo(1f, tween(1500, easing = FastOutSlowInEasing))
@@ -339,14 +341,16 @@ fun Splash(onDone: () -> Unit) {
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Spacer(Modifier.weight(1f))
-            MascotPair(
+            // The app icon the user picked, bobbing gently.
+            val icon = remember { AppIconSwitcher.current(context) }
+            Box(
                 Modifier
-                    .size(210.dp)
                     .graphicsLayer { translationY = bob * density }
-            )
-            Spacer(Modifier.height(18.dp))
+                    .shadow(18.dp, RoundedCornerShape(36.dp))
+            ) { AppIconPreview(icon, 156.dp) }
+            Spacer(Modifier.height(26.dp))
             Text("Sip & Scoop", style = T.display(46, Color.White))
-            Text("Hydrate. Fuel up. Repeat.", style = T.bold(18, Color(0xFFE6F5FE)))
+            Text("Walk. Hydrate. Fuel up.", style = T.bold(18, Color(0xFFE6F5FE)))
             Spacer(Modifier.weight(1.2f))
             Box(
                 Modifier

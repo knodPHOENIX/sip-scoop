@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Tricolour ring (steps, water, protein: one third each) with Drip in the exact centre.
+     Scaled to 80% so the ring stays inside the launcher's safe zone. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <group android:pivotX="54" android:pivotY="54" android:scaleX="0.8" android:scaleY="0.8">
+        <path android:pathData="M59.475,21.457 A33,33 0 0,1 84.920,65.530" android:strokeColor="#FFFFFFFF" android:strokeWidth="7" android:strokeLineCap="round" android:fillColor="#00000000" />
+        <path android:pathData="M79.446,75.012 A33,33 0 0,1 28.554,75.012" android:strokeColor="#FFFFFFFF" android:strokeWidth="7" android:strokeLineCap="round" android:fillColor="#00000000" />
+        <path android:pathData="M23.080,65.530 A33,33 0 0,1 48.525,21.457" android:strokeColor="#FFFFFFFF" android:strokeWidth="7" android:strokeLineCap="round" android:fillColor="#00000000" />
+        <path android:pathData="M54,31 C54,31 38,49 38,61 A16,16 0 0,0 70,61 C70,49 54,31 54,31 Z" android:fillColor="#FFFFFFFF" />
+    </group>
+</vector>
