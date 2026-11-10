@@ -91,6 +91,16 @@ object C {
     val GoldHit = Color(0xFFF5C83A)
 
     val BlueStreakLine: Color get() = pick(0xFFB5DDF8, 0xFF1F4F73)
+
+    /** Any light/dark colour pair. */
+    fun pickColor(light: Long, dark: Long): Color = pick(light, dark)
+
+    /** Soft page tint behind the rings view, one per tracker. */
+    val TintSteps: Color get() = pick(0xFFFFFBEB, 0xFF15140C)
+    val TintWater: Color get() = pick(0xFFF2F9FE, 0xFF0E1A26)
+    val TintProtein: Color get() = pick(0xFFFFF7F0, 0xFF17130F)
+    val RingTrackWater: Color get() = pick(0xFFD6ECFB, 0xFF14304A)
+    val RingTrackProtein: Color get() = pick(0xFFF9E1CC, 0xFF3A2618)
 }
 
 /** Colours for one tracker (water or protein). */

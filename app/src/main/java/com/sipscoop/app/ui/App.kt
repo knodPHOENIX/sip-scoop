@@ -118,6 +118,7 @@ fun MainScreen(
     onAskSteps: () -> Unit
 ) {
     var page by rememberSaveable { mutableIntStateOf(HOME) }
+    var calendar by remember { mutableStateOf<String?>(null) }
     // Steps first, then water, then protein.
     val pager = rememberPagerState(pageCount = { 3 })
     val scope = rememberCoroutineScope()
@@ -169,18 +170,40 @@ fun MainScreen(
                         toastKey++
                     }
                 )
-                else -> Column(Modifier.fillMaxSize().background(C.Bg)) {
-                    // Fixed top: greeting, streak and profile stay put while the pages slide.
+                else -> {
+                    val pos = pager.currentPage + pager.currentPageOffsetFraction
+                    val rings = state.ringsView
+                    val bg = if (rings) ringsTint(pos) else C.Bg
+                    Column(Modifier.fillMaxSize().background(bg)) {
+                    // Fixed top: greeting, streaks and profile stay put while the pages slide.
                     Box(Modifier.padding(start = 20.dp, end = 20.dp, top = 18.dp, bottom = 6.dp)) {
-                        GreetingHeader(state.firstName, state.stepStreak, state.streak, state.avatar) { page = PROFILE }
+                        GreetingHeader(
+                            state.firstName, state.stepStreak, state.streak, state.avatar,
+                            onStepStreak = { calendar = "steps" },
+                            onDietStreak = { calendar = "diet" }
+                        ) { page = PROFILE }
                     }
-                    PageDots(pager.currentPage + pager.currentPageOffsetFraction)
+                    if (rings) {
+                        // Rings view: one shared set of rings; the details below slide.
+                        Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                            SharedRings(
+                                state, pos, stepStatus == StepStatus.ON,
+                                onPick = { i -> scope.launch { pager.animateScrollToPage(i) } },
+                                modifier = Modifier.size(232.dp)
+                            )
+                        }
+                        Spacer(Modifier.height(8.dp))
+                        RingChips(state, pos, stepStatus == StepStatus.ON) { i -> scope.launch { pager.animateScrollToPage(i) } }
+                        Spacer(Modifier.height(10.dp))
+                    } else {
+                        PageDots(pos)
+                    }
                     Box(Modifier.weight(1f)) {
                         HorizontalPager(state = pager, beyondViewportPageCount = 1) { t ->
                             when (t) {
-                                0 -> StepsScreen(state, update, stepStatus, onAskSteps)
-                                1 -> TrackerScreen(Kind.WATER, state, update, onSearchFood = { page = FOOD })
-                                else -> TrackerScreen(Kind.PROTEIN, state, update, onSearchFood = { page = FOOD })
+                                0 -> StepsScreen(state, update, stepStatus, onAskSteps, compact = rings)
+                                1 -> TrackerScreen(Kind.WATER, state, update, onSearchFood = { page = FOOD }, compact = rings)
+                                else -> TrackerScreen(Kind.PROTEIN, state, update, onSearchFood = { page = FOOD }, compact = rings)
                             }
                         }
                     }
@@ -202,7 +225,11 @@ fun MainScreen(
                         }
                     }
                 }
+                }
             }
+        }
+        calendar?.let { kind ->
+            StreakCalendarDialog(state, steps = kind == "steps") { calendar = null }
         }
         AnimatedVisibility(
             visible = toast != null && page == HOME,

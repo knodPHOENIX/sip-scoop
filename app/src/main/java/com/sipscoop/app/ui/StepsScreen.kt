@@ -61,16 +61,17 @@ fun StepsScreen(
     state: AppState,
     update: ((AppState) -> AppState) -> Unit,
     status: StepStatus,
-    onAskPermission: () -> Unit
+    onAskPermission: () -> Unit,
+    compact: Boolean = false
 ) {
     when (status) {
         StepStatus.NO_SENSOR -> StepsMessage(
-            sleepy = true,
+            sleepy = true, compact = compact,
             title = "No step sensor here",
             body = "This phone doesn't have the chip that counts steps, so Stride can't count. Water and protein work as usual, just swipe on."
         ) { SwipeHint("Swipe for water", Arrangement.Center) }
         StepStatus.NEED_PERMISSION -> StepsMessage(
-            sleepy = false,
+            sleepy = false, compact = compact,
             title = "Meet Stride, your step buddy",
             body = "Your phone already counts steps. Allow \"Physical activity\" and Stride will show them here. Nothing leaves your phone."
         ) {
@@ -82,29 +83,30 @@ fun StepsScreen(
             ) { Text("Start counting", style = T.display(19, Color.White)) }
             Text("Android will ask you once.", style = T.bold(13, C.Muted))
         }
-        StepStatus.ON -> StepsToday(state, update)
+        StepStatus.ON -> StepsToday(state, update, compact)
     }
 }
 
 @Composable
-private fun StepsMessage(sleepy: Boolean, title: String, body: String, actions: @Composable () -> Unit) {
+private fun StepsMessage(sleepy: Boolean, compact: Boolean, title: String, body: String, actions: @Composable () -> Unit) {
     Column(
         Modifier
             .fillMaxSize()
-            .padding(horizontal = 26.dp, vertical = 20.dp),
+            .padding(horizontal = 26.dp, vertical = if (compact) 8.dp else 20.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(14.dp, Alignment.CenterVertically)
+        verticalArrangement = Arrangement.spacedBy(if (compact) 8.dp else 14.dp, Alignment.CenterVertically)
     ) {
-        StrideMascot(Modifier.size(130.dp, 100.dp), sleepy = sleepy)
-        Text(title, style = T.display(26), textAlign = TextAlign.Center)
-        Text(body, style = T.body(15, C.Muted), textAlign = TextAlign.Center)
+        if (compact) StrideMascot(Modifier.size(70.dp, 54.dp), sleepy = sleepy)
+        else StrideMascot(Modifier.size(130.dp, 100.dp), sleepy = sleepy)
+        Text(title, style = T.display(if (compact) 21 else 26), textAlign = TextAlign.Center)
+        Text(body, style = T.body(if (compact) 14 else 15, C.Muted), textAlign = TextAlign.Center)
         Spacer(Modifier.size(4.dp))
         actions()
     }
 }
 
 @Composable
-private fun StepsToday(state: AppState, update: ((AppState) -> AppState) -> Unit) {
+private fun StepsToday(state: AppState, update: ((AppState) -> AppState) -> Unit, compact: Boolean) {
     val goal = maxOf(1, state.stepGoal)
     val steps = state.steps
     val fraction = steps.toFloat() / goal
@@ -140,7 +142,7 @@ private fun StepsToday(state: AppState, update: ((AppState) -> AppState) -> Unit
                 ) { m -> SpeechBubble(m, C.GoldLine, Modifier.fillMaxWidth()) }
             }
 
-            Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            if (!compact) Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 StepRing(
                     steps = steps, goal = goal, fraction = fraction,
                     modifier = Modifier
@@ -165,13 +167,18 @@ private fun StepsToday(state: AppState, update: ((AppState) -> AppState) -> Unit
                 )
             }
 
-            WeekChart(state, Modifier.fillMaxWidth().weight(1f).heightIn(min = 96.dp))
+            WeekBars(state, Track.STEPS, "This week", Modifier.fillMaxWidth().weight(1f).heightIn(min = 96.dp))
 
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Box(Modifier.size(8.dp).background(Color(0xFF34C759), CircleShape))
                 Spacer(Modifier.size(6.dp))
                 Text("Counting on its own", style = T.bold(13, C.Muted))
-                SwipeHint("Swipe for water", Arrangement.End)
+                if (compact) {
+                    Spacer(Modifier.weight(1f))
+                    Pill("Goal ${fmt(goal)} · edit", StepAccent) { showGoal = true }
+                } else {
+                    SwipeHint("Swipe for water", Arrangement.End)
+                }
             }
         }
     }
@@ -234,68 +241,6 @@ private fun StepFact(modifier: Modifier, icon: @Composable () -> Unit, value: St
         Column {
             Text(value, style = T.display(20, C.GoldText), maxLines = 1)
             Text(label, style = T.body(12, C.Muted), maxLines = 1)
-        }
-    }
-}
-
-/** Last 7 days of steps; days the goal was hit are gold, today is the brightest. */
-@Composable
-private fun WeekChart(state: AppState, modifier: Modifier) {
-    val today = runCatching { LocalDate.parse(state.date) }.getOrElse { LocalDate.now() }
-    val days = (6 downTo 0).map { today.minusDays(it.toLong()) }
-    val values = days.map { d ->
-        if (d == today) state.steps else state.history[d.toString()]?.steps ?: 0
-    }
-    val goals = days.map { d ->
-        if (d == today) state.stepGoal else state.history[d.toString()]?.stepGoal?.takeIf { it > 0 } ?: state.stepGoal
-    }
-    val hits = values.indices.count { values[it] >= goals[it] && values[it] > 0 }
-    val top = maxOf(values.maxOrNull() ?: 0, state.stepGoal, 1)
-
-    var started by remember { mutableStateOf(false) }
-    LaunchedEffect(Unit) { started = true }
-    val grow by animateFloatAsState(if (started) 1f else 0f, tween(900, easing = FastOutSlowInEasing), label = "bars")
-
-    Column(
-        modifier
-            .border(2.dp, C.Line, RoundedCornerShape(18.dp))
-            .padding(horizontal = 14.dp, vertical = 12.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            Text("This week", style = T.bold(14), modifier = Modifier.weight(1f))
-            Text("Goal hit $hits of 7 days", style = T.body(12, C.Muted))
-        }
-        Row(Modifier.fillMaxWidth().weight(1f), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            days.forEachIndexed { i, d ->
-                val isToday = i == 6
-                val hit = values[i] >= goals[i] && values[i] > 0
-                val color = when {
-                    isToday -> C.Gold
-                    hit -> C.GoldHit
-                    else -> C.GoldIdle
-                }
-                Column(
-                    Modifier.weight(1f).fillMaxHeight(),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
-                    Box(Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.BottomCenter) {
-                        val f = (values[i].toFloat() / top).coerceIn(0.04f, 1f) * grow
-                        Box(
-                            Modifier
-                                .widthIn(max = 24.dp)
-                                .fillMaxWidth()
-                                .fillMaxHeight(f)
-                                .background(color, RoundedCornerShape(7.dp))
-                        )
-                    }
-                    Text(
-                        d.dayOfWeek.getDisplayName(java.time.format.TextStyle.NARROW, Locale.US),
-                        style = T.bold(11, if (isToday) C.GoldText else C.Muted)
-                    )
-                }
-            }
         }
     }
 }

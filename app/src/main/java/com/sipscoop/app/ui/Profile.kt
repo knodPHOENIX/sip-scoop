@@ -1,5 +1,11 @@
 package com.sipscoop.app.ui
 
+import androidx.compose.foundation.selection.toggleable
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.runtime.LaunchedEffect
@@ -467,6 +473,133 @@ fun AppearanceScreen(
             "\"Same as phone\" follows your phone's dark mode setting. Home-screen widgets always follow the phone.",
             warning = false
         )
+
+        SectionLabel("Tracker view")
+        Column(
+            Modifier
+                .fillMaxWidth()
+                .background(C.Surface, RoundedCornerShape(20.dp))
+                .border(2.dp, C.Line, RoundedCornerShape(20.dp))
+                .padding(14.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp)
+        ) {
+            val rings = state.ringsView
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                ViewCard("Classic", "Glass, bar and ring", !rings, Modifier.weight(1f), { ClassicPreview() }) {
+                    update { it.copy(ringsView = false) }
+                }
+                ViewCard("Rings", "All three at a glance", rings, Modifier.weight(1f), { RingsPreview() }) {
+                    update { it.copy(ringsView = true) }
+                }
+            }
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                val classicColor by animateColorAsState(if (!rings) C.Ink else C.Muted, tween(250), label = "classicLbl")
+                val ringsColor by animateColorAsState(if (rings) C.Ink else C.Muted, tween(250), label = "ringsLbl")
+                Text("Classic", style = T.bold(15, classicColor))
+                ViewSwitch(rings) { on -> update { it.copy(ringsView = on) } }
+                Text("Rings", style = T.bold(15, ringsColor))
+            }
+            AnimatedContent(targetState = rings, label = "viewNote") { r ->
+                Text(
+                    if (r) "One set of rings for steps, water and protein. Swipe and the colours follow the ring you are on."
+                    else "Each tracker has its own picture: a ring for steps, a glass for water and a bar for protein.",
+                    style = T.body(13, C.Muted),
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+        }
+    }
+}
+
+/** A big, easy switch: knob on the left = Classic, on the right = Rings. */
+@Composable
+private fun ViewSwitch(on: Boolean, onChange: (Boolean) -> Unit) {
+    val track by animateColorAsState(if (on) C.Blue else C.Line, tween(250), label = "viewTrack")
+    val knob by animateDpAsState(if (on) 31.dp else 3.dp, spring(dampingRatio = 0.55f, stiffness = Spring.StiffnessMedium), label = "viewKnob")
+    Box(
+        Modifier
+            .size(64.dp, 36.dp)
+            .background(track, CircleShape)
+            .toggleable(value = on, role = androidx.compose.ui.semantics.Role.Switch, onValueChange = onChange)
+            .semantics { contentDescription = "Rings view" }
+    ) {
+        Box(
+            Modifier
+                .offset(x = knob, y = 4.dp)
+                .size(28.dp)
+                .shadow(2.dp, CircleShape)
+                .background(Color.White, CircleShape)
+        )
+    }
+}
+
+@Composable
+private fun ViewCard(
+    title: String,
+    sub: String,
+    selected: Boolean,
+    modifier: Modifier,
+    preview: @Composable () -> Unit,
+    onClick: () -> Unit
+) {
+    val border by animateColorAsState(if (selected) C.Blue else C.Line, tween(220), label = "viewBorder")
+    val bg by animateColorAsState(if (selected) C.BlueCard else C.Surface, tween(220), label = "viewBg")
+    Column(
+        modifier
+            .background(bg, RoundedCornerShape(16.dp))
+            .border(2.dp, border, RoundedCornerShape(16.dp))
+            .clickable(onClick = onClick)
+            .padding(vertical = 10.dp, horizontal = 6.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(5.dp)
+    ) {
+        Box(Modifier.size(96.dp, 70.dp)) { preview() }
+        Text(title, style = T.bold(14, if (selected) C.Ink else C.Muted))
+        Text(sub, style = T.body(11, C.Muted), maxLines = 1)
+    }
+}
+
+@Composable
+private fun ClassicPreview() {
+    val glass = C.pickColor(0xFFF1F8FD, 0xFF152536)
+    val glassLine = C.pickColor(0xFFB9D3E6, 0xFF35546B)
+    val oCard = C.OrangeSoft
+    val gCard = C.GoldSoft
+    Canvas(Modifier.fillMaxSize()) {
+        inViewBox(0f, 0f, 96f, 70f) {
+            val cup = svg("M10 8 H40 L36 60 H14 Z")
+            drawPath(cup, glass)
+            drawPath(svg("M11.5 30 C18 27 24 33 30 30 S38 27 39 30 L36.6 58.5 H13.4 Z"), C.Blue)
+            drawPath(cup, glassLine, style = Stroke(2.4f, join = androidx.compose.ui.graphics.StrokeJoin.Round))
+            drawRoundRect(oCard, Offset(50f, 14f), Size(38f, 16f), androidx.compose.ui.geometry.CornerRadius(6f))
+            drawRoundRect(C.Orange, Offset(54f, 19f), Size(22f, 6f), androidx.compose.ui.geometry.CornerRadius(3f))
+            drawRoundRect(gCard, Offset(50f, 38f), Size(38f, 16f), androidx.compose.ui.geometry.CornerRadius(6f))
+            drawRoundRect(C.Gold, Offset(54f, 43f), Size(28f, 6f), androidx.compose.ui.geometry.CornerRadius(3f))
+        }
+    }
+}
+
+@Composable
+private fun RingsPreview() {
+    val tracks = listOf(C.GoldTrack, C.RingTrackWater, C.RingTrackProtein)
+    val colors = listOf(C.Gold, C.Blue, C.Orange)
+    val radii = listOf(30f, 21f, 12f)
+    val amounts = listOf(0.78f, 0.58f, 0.70f)
+    Canvas(Modifier.fillMaxSize()) {
+        inViewBox(0f, 0f, 96f, 70f) {
+            for (i in 0..2) {
+                val r = radii[i]
+                val tl = Offset(48f - r, 35f - r)
+                val sz = Size(r * 2, r * 2)
+                drawArc(tracks[i], 0f, 360f, false, tl, sz, style = Stroke(7f))
+                drawArc(colors[i], -90f, 360f * amounts[i], false, tl, sz, style = Stroke(7f, cap = StrokeCap.Round))
+            }
+        }
     }
 }
 

@@ -87,7 +87,9 @@ fun TrackerScreen(
     kind: Kind,
     state: AppState,
     update: ((AppState) -> AppState) -> Unit,
-    onSearchFood: () -> Unit = {}
+    onSearchFood: () -> Unit = {},
+    /** Rings view: the shared rings show progress, so skip the glass/bar and add the weekly chart. */
+    compact: Boolean = false
 ) {
     val isWater = kind == Kind.WATER
     val accent = if (isWater) WaterAccent else ProteinAccent
@@ -188,7 +190,19 @@ fun TrackerScreen(
             }
         }
 
-        if (isWater) {
+        if (compact) {
+            Box(Modifier.fillMaxWidth()) {
+                Row(
+                    Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Pill(if (isWater) "Goal ${liters(goal)} · edit" else "Goal $goal g · edit", accent) { showGoal = true }
+                    Pill("Edit today", accent) { showEditAll = true }
+                }
+                PopLayer(pops, accent.text, Modifier.align(Alignment.TopCenter).fillMaxWidth().height(40.dp))
+            }
+        } else if (isWater) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(22.dp, Alignment.CenterHorizontally),
@@ -307,7 +321,15 @@ fun TrackerScreen(
             }
         }
 
-        if (isWater) SwipeHint()
+        if (isWater && !compact) SwipeHint()
+        if (!isWater && compact) FoodSearchBar(onClick = onSearchFood)
+        if (compact) {
+            WeekBars(
+                state, if (isWater) Track.WATER else Track.PROTEIN,
+                if (isWater) "Water this week" else "Protein this week",
+                Modifier.fillMaxWidth().height(190.dp)
+            )
+        }
 
         // Quick foods (protein only)
         if (!isWater) {

@@ -52,6 +52,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
@@ -212,7 +213,7 @@ fun NumberField(
  * Gold shoe = step streak; blue lightning bolt = diet streak (water and protein).
  */
 @Composable
-fun StreakBadge(days: Int, steps: Boolean) {
+fun StreakBadge(days: Int, steps: Boolean, onClick: () -> Unit = {}) {
     val inf = rememberInfiniteTransition(label = "zap")
     val rot by inf.animateFloat(
         initialValue = 0f,
@@ -231,6 +232,8 @@ fun StreakBadge(days: Int, steps: Boolean) {
     )
     Row(
         modifier = Modifier
+            .clip(CircleShape)
+            .clickable(onClickLabel = if (steps) "Open step streak calendar" else "Open diet streak calendar", onClick = onClick)
             .background(if (steps) C.YellowSoft else C.BlueSoft, CircleShape)
             .border(2.dp, if (steps) C.YellowLine else C.BlueStreakLine, CircleShape)
             .padding(start = 6.dp, end = 10.dp, top = 5.dp, bottom = 5.dp),
@@ -304,7 +307,15 @@ fun DayIcon(part: DayPart) {
 }
 
 @Composable
-fun GreetingHeader(name: String, stepStreak: Int, dietStreak: Int, avatar: String, onProfile: () -> Unit) {
+fun GreetingHeader(
+    name: String,
+    stepStreak: Int,
+    dietStreak: Int,
+    avatar: String,
+    onStepStreak: () -> Unit = {},
+    onDietStreak: () -> Unit = {},
+    onProfile: () -> Unit
+) {
     val (text, part) = greeting()
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -318,8 +329,8 @@ fun GreetingHeader(name: String, stepStreak: Int, dietStreak: Int, avatar: Strin
             }
             Text(name, style = T.display(28), maxLines = 1)
         }
-        StreakBadge(stepStreak, steps = true)
-        StreakBadge(dietStreak, steps = false)
+        StreakBadge(stepStreak, steps = true, onClick = onStepStreak)
+        StreakBadge(dietStreak, steps = false, onClick = onDietStreak)
         SquishButton(
             onClick = onProfile,
             background = C.Bg,
