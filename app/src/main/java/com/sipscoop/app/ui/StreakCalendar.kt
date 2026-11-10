@@ -137,7 +137,7 @@ fun StreakCalendarDialog(state: AppState, steps: Boolean, onDismiss: () -> Unit)
         ) { m ->
             val lead = m.atDay(1).dayOfWeek.value - 1
             val cells: List<LocalDate?> = List(lead) { null } + (1..m.lengthOfMonth()).map { m.atDay(it) }
-            Column(Modifier.height(6 * 40.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Column(Modifier.height(240.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 cells.chunked(7).forEach { week ->
                     Row(Modifier.fillMaxWidth()) {
                         week.forEach { d ->
