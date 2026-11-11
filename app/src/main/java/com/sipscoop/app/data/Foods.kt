@@ -106,7 +106,7 @@ object FoodDb {
 
 /** Looks up packaged products on Open Food Facts (only when the user presses Search). */
 object OpenFoodFacts {
-    private const val USER_AGENT = "SipAndScoop/1.6.1 (Android; https://github.com/knodPHOENIX/sip-scoop)"
+    private const val USER_AGENT = "SipAndScoop/1.7.0 (Android; https://github.com/knodPHOENIX/sip-scoop)"
     private const val MIN_GAP_MS = 7000L
     private var lastCall = 0L
     private val memo = HashMap<String, List<FoodItem>>()

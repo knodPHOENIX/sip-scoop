@@ -1,6 +1,8 @@
 package com.sipscoop.app.data
 
+import android.content.ContentValues
 import android.content.Context
+import android.database.sqlite.SQLiteDatabase
 import org.json.JSONArray
 import org.json.JSONObject
 import java.time.LocalDate
@@ -169,6 +171,7 @@ fun stepsKcal(steps: Int): Int = (steps * 0.04).toInt()
 object Store {
     private const val PREFS = "sip_scoop"
     private const val KEY = "state"
+    private const val BACKUP_KEY = "state_backup_before_sqlite"
     private var counter = 0L
 
     fun newEntry(amount: Int): Entry {
@@ -179,18 +182,14 @@ object Store {
     fun now(): String = LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm"))
 
     fun load(context: Context): AppState {
-        val raw = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getString(KEY, null)
-        val state = if (raw == null) AppState() else runCatching { fromJson(JSONObject(raw)) }.getOrElse { AppState() }
+        val state = runCatching { readDb(context) }.getOrNull() ?: AppState()
         val rolled = rollOver(state).withinDailyLimits()
         if (rolled !== state) save(context, rolled)
         return rolled
     }
 
     fun save(context: Context, state: AppState) {
-        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-            .edit()
-            .putString(KEY, toJson(state).toString())
-            .commit()
+        runCatching { writeDb(context, state) }
     }
 
     fun update(context: Context, change: (AppState) -> AppState): AppState {
@@ -201,7 +200,132 @@ object Store {
 
     /** Removes everything saved on this phone. */
     fun clear(context: Context) {
+        val db = SipDatabase.get(context).writableDatabase
+        db.inTransaction {
+            delete("settings", null, null)
+            delete("day", null, null)
+            delete("entry", null, null)
+            delete("food", null, null)
+        }
+        savedDays = null
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().clear().commit()
+    }
+
+    // ------------------------------------------------------------------ SQLite
+
+    /** Days already written, so a save only touches the rows that changed. */
+    private var savedDays: Map<String, DayRecord>? = null
+
+    /** Lists and the day log live in their own tables; everything else is a settings row. */
+    private val TABLE_KEYS = setOf("water", "protein", "history", "foods")
+
+    private fun readDb(context: Context): AppState? {
+        val db = SipDatabase.get(context).writableDatabase
+        val o = JSONObject()
+        db.query("settings", arrayOf("key", "value"), null, null, null, null, null).use { c ->
+            while (c.moveToNext()) {
+                runCatching { o.put(c.getString(0), JSONObject(c.getString(1)).opt("v")) }
+            }
+        }
+        if (o.length() == 0) return migrateFromPrefs(context)
+
+        val date = o.optString("date", LocalDate.now().toString())
+        val water = JSONArray()
+        val protein = JSONArray()
+        db.query("entry", arrayOf("id", "kind", "time", "amount"), "date = ?", arrayOf(date), null, null, "id").use { c ->
+            while (c.moveToNext()) {
+                val e = JSONObject().put("id", c.getLong(0)).put("t", c.getString(2)).put("a", c.getInt(3))
+                if (c.getString(1) == "water") water.put(e) else protein.put(e)
+            }
+        }
+        val hist = JSONObject()
+        val days = mutableMapOf<String, DayRecord>()
+        db.query(
+            "day", arrayOf("date", "water", "protein", "water_goal", "protein_goal", "met", "steps", "step_goal", "step_met"),
+            null, null, null, null, "date"
+        ).use { c ->
+            while (c.moveToNext()) {
+                val r = DayRecord(
+                    c.getInt(1), c.getInt(2), c.getInt(3), c.getInt(4), c.getInt(5) == 1,
+                    c.getInt(6), c.getInt(7), c.getInt(8) == 1
+                )
+                days[c.getString(0)] = r
+                hist.put(
+                    c.getString(0),
+                    JSONObject().put("w", r.water).put("p", r.protein).put("wg", r.waterGoal).put("pg", r.proteinGoal)
+                        .put("m", r.met).put("s", r.steps).put("sg", r.stepGoal).put("sm", r.stepMet)
+                )
+            }
+        }
+        val foods = JSONArray()
+        db.query("food", arrayOf("name", "grams"), null, null, null, null, "position").use { c ->
+            while (c.moveToNext()) foods.put(JSONObject().put("n", c.getString(0)).put("g", c.getInt(1)))
+        }
+        o.put("water", water).put("protein", protein).put("history", hist).put("foods", foods)
+        savedDays = days
+        return fromJson(o)
+    }
+
+    private fun writeDb(context: Context, s: AppState) {
+        val db = SipDatabase.get(context).writableDatabase
+        val json = toJson(s)
+        db.inTransaction {
+            // Settings: one row each.
+            val keys = json.keys()
+            while (keys.hasNext()) {
+                val k = keys.next()
+                if (k in TABLE_KEYS) continue
+                val row = ContentValues().apply {
+                    put("key", k)
+                    put("value", JSONObject().put("v", json.get(k)).toString())
+                }
+                insertWithOnConflict("settings", null, row, SQLiteDatabase.CONFLICT_REPLACE)
+            }
+
+            // Today's log: rewrite only today's entries; earlier days stay as they are.
+            delete("entry", "date = ?", arrayOf(s.date))
+            fun putEntries(kind: String, list: List<Entry>) = list.forEach { e ->
+                insertWithOnConflict("entry", null, ContentValues().apply {
+                    put("id", e.id); put("date", s.date); put("kind", kind); put("time", e.time); put("amount", e.amount)
+                }, SQLiteDatabase.CONFLICT_REPLACE)
+            }
+            putEntries("water", s.water)
+            putEntries("protein", s.protein)
+
+            // Finished days: only rows that are new or changed.
+            val before = savedDays
+            s.history.forEach { (date, r) ->
+                if (before?.get(date) != r) insertWithOnConflict("day", null, dayValues(date, r), SQLiteDatabase.CONFLICT_REPLACE)
+            }
+            val oldest = s.history.keys.minOrNull()
+            if (oldest != null) {
+                delete("day", "date < ?", arrayOf(oldest))
+                delete("entry", "date < ?", arrayOf(oldest))
+            } else if (s.history.isEmpty() && !before.isNullOrEmpty()) {
+                delete("day", null, null)
+            }
+
+            // Quick foods, in order.
+            delete("food", null, null)
+            s.foods.forEachIndexed { i, f ->
+                insert("food", null, ContentValues().apply { put("position", i); put("name", f.name); put("grams", f.grams) })
+            }
+        }
+        savedDays = s.history
+    }
+
+    /**
+     * First start after updating from a version that kept everything in one saved block:
+     * copy it into the database. The old block is kept as a backup.
+     */
+    private fun migrateFromPrefs(context: Context): AppState? {
+        val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+        val raw = prefs.getString(KEY, null) ?: return null
+        val old = runCatching { fromJson(JSONObject(raw)) }.getOrNull() ?: return null
+        savedDays = null
+        writeDb(context, old)
+        prefs.edit().putString(BACKUP_KEY, raw).remove(KEY).commit()
+        return old
     }
 
     /** Starts a fresh day when the date has changed, keeping a record of the old one. */
