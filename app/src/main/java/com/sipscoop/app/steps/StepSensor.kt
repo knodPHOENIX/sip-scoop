@@ -46,7 +46,7 @@ object StepSensor {
      * Listens until the sensor reports, then stops. [onDone] gets the raw total, or null if
      * the phone gave nothing within [timeoutMs]. Runs on the main thread.
      */
-    fun readOnce(context: Context, timeoutMs: Long = 4000, onDone: (Long?) -> Unit) {
+    fun readOnce(context: Context, timeoutMs: Long = 8000, onDone: (Long?) -> Unit) {
         val sm = context.getSystemService(SensorManager::class.java)
         val s = sm?.getDefaultSensor(Sensor.TYPE_STEP_COUNTER)
         if (sm == null || s == null || !hasPermission(context)) {
@@ -70,11 +70,13 @@ object StepSensor {
 
             override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {}
         }
-        val ok = runCatching { sm.registerListener(listener, s, SensorManager.SENSOR_DELAY_NORMAL, handler) }.getOrDefault(false)
+        val ok = runCatching { sm.registerListener(listener, s, SensorManager.SENSOR_DELAY_NORMAL, 0, handler) }.getOrDefault(false)
         if (!ok) {
             finish(null)
             return
         }
+        // Ask the phone to hand over any steps it is holding back, so a reading arrives now.
+        runCatching { sm.flush(listener) }
         handler.postDelayed({ finish(null) }, timeoutMs)
     }
 

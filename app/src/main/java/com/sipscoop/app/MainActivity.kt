@@ -90,24 +90,50 @@ class MainActivity : ComponentActivity() {
 
     // ------------------------------------------------------------------ steps
 
+    /** Steps from the step detector since the step counter last reported (shown right away). */
+    private var liveExtra = 0
+    private var counterSteps = -1
+
     private fun startSteps() {
         if (stepListener != null || stepStatus != StepStatus.ON) return
         val sm = getSystemService(SensorManager::class.java) ?: return
-        val sensor = sm.getDefaultSensor(Sensor.TYPE_STEP_COUNTER) ?: return
+        val counter = sm.getDefaultSensor(Sensor.TYPE_STEP_COUNTER) ?: return
+        val detector = sm.getDefaultSensor(Sensor.TYPE_STEP_DETECTOR)
         val l = object : SensorEventListener {
             override fun onSensorChanged(event: SensorEvent) {
-                val total = event.values.firstOrNull()?.toLong() ?: return
-                onStepReading(total)
+                when (event.sensor.type) {
+                    Sensor.TYPE_STEP_COUNTER -> event.values.firstOrNull()?.toLong()?.let { onStepReading(it) }
+                    Sensor.TYPE_STEP_DETECTOR -> onStepDetected()
+                }
             }
 
             override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {}
         }
-        if (sm.registerListener(l, sensor, SensorManager.SENSOR_DELAY_UI)) stepListener = l
+        // Report with no batching delay, so the count moves while you walk.
+        if (sm.registerListener(l, counter, SensorManager.SENSOR_DELAY_UI, 0)) {
+            stepListener = l
+            if (detector != null) sm.registerListener(l, detector, SensorManager.SENSOR_DELAY_UI, 0)
+            // Some phones hold step readings back in a batch; ask for them now.
+            runCatching { sm.flush(l) }
+        }
     }
 
     private fun stopSteps() {
         stepListener?.let { getSystemService(SensorManager::class.java)?.unregisterListener(it) }
         stepListener = null
+        liveExtra = 0
+        counterSteps = -1
+    }
+
+    /**
+     * Many phones (Motorola among them) update the step counter only every few dozen steps.
+     * The step detector fires on each step, so we add those on top until the counter catches up.
+     */
+    private fun onStepDetected() {
+        if (counterSteps < 0) return
+        liveExtra++
+        val shown = (counterSteps + liveExtra).coerceAtMost(com.sipscoop.app.data.STEP_DAY_MAX)
+        if (shown > appState.steps) appState = appState.copy(steps = shown)
     }
 
     private fun onStepReading(total: Long) {
@@ -117,8 +143,15 @@ class MainActivity : ComponentActivity() {
             appState = Store.load(this)
         }
         val before = appState
-        val next = before.withStepReading(total)
-        if (next === before) return
+        // The counter is the real count; drop the live extras it now includes.
+        liveExtra = 0
+        var next = before.withStepReading(total)
+        counterSteps = next.steps
+        // Never step backwards on screen if the detector ran slightly ahead of the counter.
+        if (next.steps < before.steps && next.stepBase == before.stepBase && next.stepPrior == before.stepPrior) {
+            next = next.copy(steps = before.steps)
+        }
+        if (next == before) return
         appState = next
         // Saving on every step is wasteful; save every few seconds, or right away when the goal is hit.
         val now = System.currentTimeMillis()
