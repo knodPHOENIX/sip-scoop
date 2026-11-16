@@ -60,6 +60,10 @@ private const val LASHES = "M46.5 55 L44.5 53.5 M73.5 55 L75.5 53.5"
 /** One of the six profile characters, drawn as a circle. */
 @Composable
 fun AvatarImage(id: String, modifier: Modifier = Modifier) {
+    if (id == PHOTO_ID || id == PHOTO_PENDING_ID) {
+        PhotoAvatar(id, modifier)
+        return
+    }
     Canvas(modifier) {
         inViewBox(0f, 0f, 120f, 120f) { drawAvatar(id) }
     }

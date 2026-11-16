@@ -84,10 +84,10 @@ object StepSensor {
     fun snapshot(context: Context, then: () -> Unit = {}) {
         val app = context.applicationContext
         readOnce(app) { total ->
-            if (total != null) {
-                Store.update(app) { it.withStepReading(total) }
-                WidgetSync.refreshAll(app)
-            }
+            val state = if (total != null) Store.update(app) { it.withStepReading(total) } else Store.load(app)
+            // Logs the new steps by hour and closes a walk that has ended.
+            com.sipscoop.app.data.StepLog.sync(app, state)
+            if (total != null) WidgetSync.refreshAll(app)
             then()
         }
     }

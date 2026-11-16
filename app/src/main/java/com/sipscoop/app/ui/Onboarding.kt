@@ -1,5 +1,8 @@
 package com.sipscoop.app.ui
 
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.FastOutSlowInEasing
@@ -60,13 +63,15 @@ import com.sipscoop.app.data.AppState
 
 /** First-time setup: name, age, then daily goals. */
 @Composable
-fun Onboarding(initial: AppState, onFinish: (name: String, age: Int, avatar: String, water: Int, protein: Int) -> Unit) {
+fun Onboarding(initial: AppState, onFinish: (name: String, age: Int, avatar: String, water: Int, protein: Int, rings: Boolean) -> Unit) {
     var step by remember { mutableIntStateOf(0) }
     var name by remember { mutableStateOf(initial.name) }
     var age by remember { mutableStateOf(initial.age.toString()) }
     var water by remember { mutableStateOf(initial.waterGoal.toString()) }
     var protein by remember { mutableStateOf(initial.proteinGoal.toString()) }
     var avatar by remember { mutableStateOf(initial.avatar) }
+    // null until the user picks: a fresh install always asks Classic or Rings.
+    var rings by remember { mutableStateOf<Boolean?>(null) }
 
     val ageN = age.toIntOrNull() ?: 0
     val waterN = water.toIntOrNull() ?: 0
@@ -77,9 +82,10 @@ fun Onboarding(initial: AppState, onFinish: (name: String, age: Int, avatar: Str
         1 -> ageN in 5..110
         2 -> true
         3 -> waterN in 1..Limits.WATER_MAX && proteinN in 1..Limits.PROTEIN_MAX
+        4 -> rings != null
         else -> true
     }
-    val progress by animateFloatAsState(step / 4f, tween(600, easing = FastOutSlowInEasing), label = "progress")
+    val progress by animateFloatAsState(step / 5f, tween(600, easing = FastOutSlowInEasing), label = "progress")
 
     Column(
         modifier = Modifier
@@ -89,7 +95,7 @@ fun Onboarding(initial: AppState, onFinish: (name: String, age: Int, avatar: Str
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         Row(Modifier.fillMaxWidth().height(44.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            AnimatedVisibility(visible = step in 1..3, enter = fadeIn() + scaleIn(), exit = fadeOut() + scaleOut()) {
+            AnimatedVisibility(visible = step in 1..4, enter = fadeIn() + scaleIn(), exit = fadeOut() + scaleOut()) {
                 SquishButton(onClick = { step = maxOf(0, step - 1) }, background = C.Faint, shape = RoundedCornerShape(12.dp), contentPadding = PaddingValues(10.dp)) {
                     Canvas(Modifier.size(20.dp)) {
                         inViewBox(0f, 0f, 24f, 24f) {
@@ -177,7 +183,7 @@ fun Onboarding(initial: AppState, onFinish: (name: String, age: Int, avatar: Str
                         )
                     }
                     3 -> {
-                        Asking("Last step! Set your daily goals. You can change them anytime.", small = true)
+                        Asking("Set your daily goals. You can change them anytime.", small = true)
                         Column(
                             Modifier
                                 .fillMaxWidth()
@@ -221,6 +227,23 @@ fun Onboarding(initial: AppState, onFinish: (name: String, age: Int, avatar: Str
                             if (proteinN >= Limits.PROTEIN_MAX) NoteBox("400 g is the most you can set.", warning = false)
                         }
                     }
+                    4 -> {
+                        Asking("Last step! How do you want to see your progress?", small = true)
+                        ViewChoice(
+                            "Classic", "Each tracker has its own picture: ring, glass and bar.",
+                            selected = rings == false, preview = { ClassicPreview() }
+                        ) { rings = false }
+                        ViewChoice(
+                            "Rings", "One set of rings for steps, water and protein.",
+                            selected = rings == true, preview = { RingsPreview() }
+                        ) { rings = true }
+                        Text(
+                            "You can switch any time in Profile → Appearance.",
+                            style = T.body(14, C.Muted),
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
                     else -> AllSet(firstName, avatar, waterN, proteinN)
                 }
             }
@@ -228,10 +251,10 @@ fun Onboarding(initial: AppState, onFinish: (name: String, age: Int, avatar: Str
 
         Btn3D(
             onClick = {
-                if (step < 4) {
+                if (step < 5) {
                     if (canGo) step++
                 } else {
-                    onFinish(name.trim(), ageN, avatar, waterN, proteinN)
+                    onFinish(name.trim(), ageN, avatar, waterN, proteinN, rings == true)
                 }
             },
             face = if (canGo) C.Green else C.Grey,
@@ -240,7 +263,7 @@ fun Onboarding(initial: AppState, onFinish: (name: String, age: Int, avatar: Str
             depth = 6.dp,
             contentPadding = PaddingValues(vertical = 14.dp)
         ) {
-            Text(if (step < 4) "Continue" else "Start tracking", style = T.display(20, if (canGo) Color.White else C.GreyText))
+            Text(if (step < 5) "Continue" else "Start tracking", style = T.display(20, if (canGo) Color.White else C.GreyText))
         }
     }
 }
@@ -334,4 +357,39 @@ private fun AllSet(firstName: String, avatar: String, water: Int, protein: Int) 
 private fun clampGoal(v: String, max: Int): String {
     val n = v.toIntOrNull() ?: return v
     return if (n > max) max.toString() else v
+}
+
+/** One big choice card for the Classic / Rings question. */
+@Composable
+private fun ViewChoice(title: String, sub: String, selected: Boolean, preview: @Composable () -> Unit, onClick: () -> Unit) {
+    val edge by animateColorAsState(if (selected) C.Blue else C.Line, tween(220), label = "choiceEdge")
+    val bg by animateColorAsState(if (selected) C.BlueCard else C.Surface, tween(220), label = "choiceBg")
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .background(bg, RoundedCornerShape(20.dp))
+            .border(3.dp, edge, RoundedCornerShape(20.dp))
+            .clickable(onClick = onClick)
+            .padding(14.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(14.dp)
+    ) {
+        Box(
+            Modifier
+                .size(96.dp, 76.dp)
+                .background(C.Surface, RoundedCornerShape(14.dp))
+                .padding(4.dp)
+        ) { preview() }
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Text(title, style = T.bold(17))
+            Text(sub, style = T.body(13, C.Muted))
+        }
+        Box(
+            Modifier
+                .size(24.dp)
+                .border(3.dp, if (selected) C.Blue else C.Line, CircleShape)
+                .padding(5.dp)
+                .background(if (selected) C.Blue else Color.Transparent, CircleShape)
+        )
+    }
 }

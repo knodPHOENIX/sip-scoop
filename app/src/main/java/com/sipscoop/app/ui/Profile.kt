@@ -1,5 +1,13 @@
 package com.sipscoop.app.ui
 
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.Dispatchers
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.semantics.semantics
@@ -568,7 +576,7 @@ private fun ViewCard(
 }
 
 @Composable
-private fun ClassicPreview() {
+fun ClassicPreview() {
     val glass = C.pickColor(0xFFF1F8FD, 0xFF152536)
     val glassLine = C.pickColor(0xFFB9D3E6, 0xFF35546B)
     val oCard = C.OrangeSoft
@@ -588,7 +596,7 @@ private fun ClassicPreview() {
 }
 
 @Composable
-private fun RingsPreview() {
+fun RingsPreview() {
     val tracks = listOf(C.GoldTrack, C.RingTrackWater, C.RingTrackProtein)
     val colors = listOf(C.Gold, C.Blue, C.Orange)
     val radii = listOf(30f, 21f, 12f)
@@ -1065,10 +1073,34 @@ fun emailSupport(context: android.content.Context): Boolean {
 /** Opens from a tap on the profile picture: pick a character and change the name in one place. */
 @Composable
 fun EditProfileDialog(state: AppState, onDismiss: () -> Unit, onSave: (String, String) -> Unit) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     var name by remember { mutableStateOf(state.name) }
     var pick by remember { mutableStateOf(state.avatar) }
-    val ok = name.isNotBlank()
-    Popup(onDismiss = onDismiss) {
+    var hasPending by remember { mutableStateOf(false) }
+    var loading by remember { mutableStateOf(false) }
+    val hasSaved = remember(ProfilePhoto.version.intValue) { ProfilePhoto.hasSaved(context) }
+    // Android's photo picker: no storage permission needed, the app only sees the one photo.
+    val picker = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
+        if (uri != null) {
+            loading = true
+            scope.launch {
+                val ok = withContext(Dispatchers.IO) { ProfilePhoto.importPending(context, uri) }
+                loading = false
+                if (ok) {
+                    hasPending = true
+                    ProfilePhoto.version.intValue++
+                    pick = PHOTO_PENDING_ID
+                }
+            }
+        }
+    }
+    val close = {
+        ProfilePhoto.discardPending(context)
+        onDismiss()
+    }
+    val ok = name.isNotBlank() && !loading
+    Popup(onDismiss = close) {
         Box(
             Modifier
                 .size(84.dp)
@@ -1099,11 +1131,36 @@ fun EditProfileDialog(state: AppState, onDismiss: () -> Unit, onSave: (String, S
             )
         }
         Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text("Character", style = T.bold(13, C.Muted))
-            AVATAR_IDS.chunked(3).forEach { row ->
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            Text("Picture", style = T.bold(13, C.Muted))
+            // Your photo (if any), then a Gallery tile, then the six characters.
+            val photoId = if (hasPending) PHOTO_PENDING_ID else if (hasSaved) PHOTO_ID else null
+            val tiles = listOfNotNull(photoId, GALLERY_TILE) + AVATAR_IDS
+            tiles.chunked(4).forEach { row ->
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     row.forEach { id ->
                         val sel = id == pick
+                        if (id == GALLERY_TILE) {
+                            Column(
+                                Modifier
+                                    .weight(1f)
+                                    .height(66.dp)
+                                    .background(C.Faint, RoundedCornerShape(16.dp))
+                                    .border(2.dp, C.BlueStreakLine, RoundedCornerShape(16.dp))
+                                    .clickable(enabled = !loading) {
+                                        picker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+                                    },
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.Center
+                            ) {
+                                if (loading) {
+                                    CircularProgressIndicator(Modifier.size(22.dp), color = C.Blue, strokeWidth = 3.dp)
+                                } else {
+                                    GalleryIcon()
+                                    Text("Gallery", style = T.bold(11, C.BlueDark))
+                                }
+                            }
+                            return@forEach
+                        }
                         Box(Modifier.weight(1f)) {
                             SquishButton(
                                 onClick = { pick = id },
@@ -1112,7 +1169,7 @@ fun EditProfileDialog(state: AppState, onDismiss: () -> Unit, onSave: (String, S
                                 borderColor = if (sel) C.Blue else C.Line,
                                 modifier = Modifier.fillMaxWidth(),
                                 contentPadding = PaddingValues(vertical = 8.dp)
-                            ) { AvatarImage(id, Modifier.size(54.dp).align(Alignment.Center)) }
+                            ) { AvatarImage(id, Modifier.size(50.dp).align(Alignment.Center)) }
                             if (sel) {
                                 Box(
                                     Modifier
@@ -1126,9 +1183,36 @@ fun EditProfileDialog(state: AppState, onDismiss: () -> Unit, onSave: (String, S
                             }
                         }
                     }
+                    repeat(4 - row.size) { Spacer(Modifier.weight(1f)) }
                 }
             }
+            Text("Your photo is cropped to a circle and stays on this phone only.", style = T.body(12, C.Muted))
         }
-        PopupButton("Save", C.Blue, C.BlueEdge, enabled = ok) { if (ok) onSave(name.trim(), pick) }
+        PopupButton("Save", C.Blue, C.BlueEdge, enabled = ok) {
+            if (ok) {
+                val chosen = if (pick == PHOTO_PENDING_ID) {
+                    ProfilePhoto.commit(context)
+                    PHOTO_ID
+                } else {
+                    ProfilePhoto.discardPending(context)
+                    pick
+                }
+                onSave(name.trim(), chosen)
+            }
+        }
+    }
+}
+
+private const val GALLERY_TILE = "gallery"
+
+@Composable
+private fun GalleryIcon() {
+    val c = C.BlueDark
+    Canvas(Modifier.size(22.dp)) {
+        inViewBox(0f, 0f, 24f, 24f) {
+            drawRoundRect(c, Offset(3f, 5f), Size(18f, 14f), androidx.compose.ui.geometry.CornerRadius(3f), style = Stroke(2f))
+            drawCircle(c, 1.8f, Offset(9f, 10f))
+            drawPath(svg("M4 17 L9.5 12.5 L13 15 L16 12 L20 16"), c, style = Stroke(2f, join = androidx.compose.ui.graphics.StrokeJoin.Round))
+        }
     }
 }

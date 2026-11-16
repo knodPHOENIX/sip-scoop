@@ -89,11 +89,11 @@ fun AppRoot(
         when (s) {
             0 -> Splash { splashDone = true }
             1 -> Box(Modifier.fillMaxSize().background(C.Bg).windowInsetsPadding(WindowInsets.safeDrawing)) {
-                Onboarding(state) { name, age, avatar, water, protein ->
+                Onboarding(state) { name, age, avatar, water, protein, rings ->
                     update {
                         it.copy(
                             onboarded = true, name = name, age = age, avatar = avatar,
-                            waterGoal = water, proteinGoal = protein, since = it.date
+                            waterGoal = water, proteinGoal = protein, since = it.date, ringsView = rings
                         )
                     }
                 }

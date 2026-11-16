@@ -54,10 +54,11 @@ object Reminders {
         if (!s.onboarded) return
 
         if (StepSensor.available(context)) {
-            // Read the step counter about once an hour so steps stay right across midnight.
+            // Read the step counter about every 15 minutes, so walks get the right time
+            // and steps stay right across midnight.
             am.setInexactRepeating(
-                AlarmManager.RTC, System.currentTimeMillis() + AlarmManager.INTERVAL_HOUR,
-                AlarmManager.INTERVAL_HOUR, snapshot
+                AlarmManager.RTC, System.currentTimeMillis() + AlarmManager.INTERVAL_FIFTEEN_MINUTES,
+                AlarmManager.INTERVAL_FIFTEEN_MINUTES, snapshot
             )
             if (s.remindSteps) {
                 am.setInexactRepeating(AlarmManager.RTC_WAKEUP, nextTime(19), AlarmManager.INTERVAL_DAY, steps)

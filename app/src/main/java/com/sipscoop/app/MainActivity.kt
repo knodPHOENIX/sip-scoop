@@ -84,6 +84,7 @@ class MainActivity : ComponentActivity() {
     override fun onPause() {
         stopSteps()
         Store.save(this, appState)
+        com.sipscoop.app.data.StepLog.sync(this, appState)
         WidgetSync.refreshAll(this)
         super.onPause()
     }
@@ -158,6 +159,7 @@ class MainActivity : ComponentActivity() {
         if (now - lastStepSave > 5000 || (next.stepsMet && !before.stepsMet)) {
             lastStepSave = now
             Store.save(this, next)
+            com.sipscoop.app.data.StepLog.sync(this, next)
             WidgetSync.refreshAll(this)
         }
     }
@@ -189,6 +191,8 @@ class MainActivity : ComponentActivity() {
         if (!next.onboarded && before.onboarded) {
             // logged out: wipe everything stored, then keep only the fresh state
             Store.clear(this)
+            com.sipscoop.app.ui.ProfilePhoto.clear(this)
+            com.sipscoop.app.data.StepLog.clear(this)
         }
         Store.save(this, next)
         applyTheme(next)

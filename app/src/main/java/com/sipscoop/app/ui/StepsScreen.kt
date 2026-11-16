@@ -1,5 +1,16 @@
 package com.sipscoop.app.ui
 
+import com.sipscoop.app.data.Walk
+import com.sipscoop.app.data.StepLog
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.draw.clip
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
@@ -120,70 +131,74 @@ private fun StepsToday(state: AppState, update: ((AppState) -> AppState) -> Unit
         else -> "${fmt(left)} steps to go. A ${(left + 99) / 100}-minute walk does it!"
     }
 
-    BoxWithConstraints(Modifier.fillMaxSize()) {
-        val ring: Dp = (maxHeight * 0.32f).coerceIn(150.dp, 210.dp)
-        Column(
-            Modifier
-                .fillMaxSize()
-                .padding(start = 20.dp, end = 20.dp, top = if (compact) 0.dp else 6.dp, bottom = 12.dp),
-            verticalArrangement = Arrangement.spacedBy(if (compact) 12.dp else 14.dp)
+    val context = LocalContext.current
+    val today = runCatching { LocalDate.parse(state.date) }.getOrElse { LocalDate.now() }
+    // 0 = today, 1 = yesterday ... the day picker can look back 4 days.
+    var back by remember { mutableIntStateOf(0) }
+    val day = today.minusDays(back.toLong())
+    val dayKey = day.toString()
+    val daySteps = if (back == 0) steps else state.history[dayKey]?.steps ?: 0
+    val hours = remember(dayKey, state.steps) { StepLog.hours(context, dayKey) }
+    val walks = remember(dayKey, state.steps) { StepLog.walks(context, dayKey) }
+
+    Column(
+        Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(start = 20.dp, end = 20.dp, top = if (compact) 0.dp else 6.dp, bottom = 18.dp),
+        verticalArrangement = Arrangement.spacedBy(if (compact) 12.dp else 14.dp)
+    ) {
+        Row(
+            verticalAlignment = if (compact) Alignment.CenterVertically else Alignment.Bottom,
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            Row(
-                verticalAlignment = if (compact) Alignment.CenterVertically else Alignment.Bottom,
-                horizontalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                Box(Modifier.padding(top = if (compact) 0.dp else 14.dp)) {
-                    StrideMascot(Modifier.size(if (compact) 56.dp else 66.dp, if (compact) 43.dp else 51.dp), celebrate = fraction >= 1f)
-                }
-                AnimatedContent(
-                    targetState = msg,
-                    transitionSpec = {
-                        (fadeIn(tween(300)) + slideInHorizontally(tween(300)) { -it / 10 }) togetherWith fadeOut(tween(150))
-                    },
-                    label = "stepMsg",
-                    modifier = Modifier.weight(1f)
-                ) { m -> SpeechBubble(m, C.GoldLine, Modifier.fillMaxWidth()) }
+            Box(Modifier.padding(top = if (compact) 0.dp else 14.dp)) {
+                StrideMascot(Modifier.size(if (compact) 56.dp else 66.dp, if (compact) 43.dp else 51.dp), celebrate = fraction >= 1f)
             }
+            AnimatedContent(
+                targetState = msg,
+                transitionSpec = {
+                    (fadeIn(tween(300)) + slideInHorizontally(tween(300)) { -it / 10 }) togetherWith fadeOut(tween(150))
+                },
+                label = "stepMsg",
+                modifier = Modifier.weight(1f)
+            ) { m -> SpeechBubble(m, C.GoldLine, Modifier.fillMaxWidth()) }
+        }
 
-            if (!compact) Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                StepRing(
-                    steps = steps, goal = goal, fraction = fraction,
-                    modifier = Modifier
-                        .size(ring)
-                        .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { showGoal = true }
-                )
+        if (!compact) Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            StepRing(
+                steps = steps, goal = goal, fraction = fraction,
+                modifier = Modifier
+                    .size(190.dp)
+                    .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { showGoal = true }
+            )
+            Pill("Goal ${fmt(goal)} · edit", StepAccent) { showGoal = true }
+        }
+
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Box(Modifier.size(8.dp).background(Color(0xFF34C759), CircleShape))
+            Spacer(Modifier.size(6.dp))
+            Text("Counting on its own", style = T.bold(13, C.Muted))
+            if (compact) {
+                Spacer(Modifier.weight(1f))
                 Pill("Goal ${fmt(goal)} · edit", StepAccent) { showGoal = true }
-            }
-
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                StepFact(
-                    Modifier.weight(1f),
-                    icon = { LineIcon(Ic.PIN, C.GoldText, 22.dp, 2.2f) },
-                    value = String.format(Locale.US, "%.1f km", stepsKm(steps)),
-                    label = "Distance"
-                )
-                StepFact(
-                    Modifier.weight(1f),
-                    icon = { LineIcon(Ic.FLAME, Color(0xFFFF7A45), 22.dp, 2.2f) },
-                    value = "${fmt(stepsKcal(steps))} kcal",
-                    label = "Burned, about"
-                )
-            }
-
-            WeekBars(state, Track.STEPS, "This week", Modifier.fillMaxWidth().weight(1f).heightIn(min = 96.dp))
-
-            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                Box(Modifier.size(8.dp).background(Color(0xFF34C759), CircleShape))
-                Spacer(Modifier.size(6.dp))
-                Text("Counting on its own", style = T.bold(13, C.Muted))
-                if (compact) {
-                    Spacer(Modifier.weight(1f))
-                    Pill("Goal ${fmt(goal)} · edit", StepAccent) { showGoal = true }
-                } else {
-                    SwipeHint("Swipe for water", Arrangement.End)
-                }
+            } else {
+                SwipeHint("Swipe for water", Arrangement.End)
             }
         }
+
+        // Distance, calories and time spent walking, for the picked day.
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            FactTile(Modifier.weight(1f), String.format(Locale.US, "%.1f km", stepsKm(daySteps)), "Distance")
+            FactTile(Modifier.weight(1f), "${fmt(stepsKcal(daySteps))} kcal", "Burned, about")
+            FactTile(Modifier.weight(1f), "${walks.sumOf { it.minutes }} min", "Active walking")
+        }
+
+        DayPicker(today, back) { back = it }
+
+        ActivityChart(state, hours, back, day)
+
+        WalksCard(walks, if (back == 0) "Walks today" else "Walks on ${shortDay(day)}")
     }
 
     if (showGoal) {
@@ -246,4 +261,241 @@ private fun StepFact(modifier: Modifier, icon: @Composable () -> Unit, value: St
             Text(label, style = T.body(12, C.Muted), maxLines = 1)
         }
     }
+}
+
+private fun shortDay(d: LocalDate): String =
+    d.dayOfWeek.getDisplayName(java.time.format.TextStyle.SHORT, Locale.US) + " " + d.dayOfMonth
+
+private fun clock(min: Int): String {
+    val h = (min / 60) % 24
+    val m = min % 60
+    val h12 = if (h % 12 == 0) 12 else h % 12
+    return String.format(Locale.US, "%d:%02d %s", h12, m, if (h < 12) "AM" else "PM")
+}
+
+private fun hourLabel(h: Int): String {
+    val h12 = if (h % 12 == 0) 12 else h % 12
+    return "$h12 ${if (h % 24 < 12) "AM" else "PM"}"
+}
+
+@Composable
+private fun FactTile(modifier: Modifier, value: String, label: String) {
+    Column(
+        modifier
+            .background(C.GoldCard, RoundedCornerShape(16.dp))
+            .padding(vertical = 10.dp, horizontal = 4.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(value, style = T.display(18, C.GoldText), maxLines = 1)
+        Text(label, style = T.body(11, C.Muted), maxLines = 1)
+    }
+}
+
+/** Today and the 4 days before it; pick one to see its hours and walks. */
+@Composable
+private fun DayPicker(today: LocalDate, back: Int, onPick: (Int) -> Unit) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        SectionLabel("Pick a day")
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            (4 downTo 0).forEach { b ->
+                val d = today.minusDays(b.toLong())
+                val on = b == back
+                val bg by animateColorAsState(if (on) C.Gold else C.Surface, tween(220), label = "dayBg")
+                val fg by animateColorAsState(if (on) Color(0xFF4A3600) else C.Ink, tween(220), label = "dayFg")
+                Column(
+                    Modifier
+                        .weight(1f)
+                        .background(bg, RoundedCornerShape(14.dp))
+                        .border(2.dp, if (on) C.GoldEdge else C.Line, RoundedCornerShape(14.dp))
+                        .clickable { onPick(b) }
+                        .padding(vertical = 7.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        if (b == 0) "Today" else d.dayOfWeek.getDisplayName(java.time.format.TextStyle.SHORT, Locale.US),
+                        style = T.bold(11, fg), maxLines = 1
+                    )
+                    Text("${d.dayOfMonth}", style = T.display(17, fg))
+                }
+            }
+        }
+    }
+}
+
+/** Steps by hour (when you walked) or the last 7 days. Tap an hour to see its number. */
+@Composable
+private fun ActivityChart(state: AppState, hours: IntArray, back: Int, day: LocalDate) {
+    var byHour by remember { mutableStateOf(true) }
+    // Show from 6 AM, or earlier if there were steps earlier.
+    val first = minOf(6, hours.indexOfFirst { it > 0 }.takeIf { it >= 0 } ?: 6)
+    val range = first..23
+    val best = range.maxByOrNull { hours[it] } ?: 8
+    var picked by remember(back) { mutableIntStateOf(-1) }
+    val sel = if (picked in range) picked else best
+
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .background(C.Surface, RoundedCornerShape(18.dp))
+            .border(2.dp, C.Line, RoundedCornerShape(18.dp))
+            .padding(14.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                if (!byHour) "This week" else if (back == 0) "Today by hour" else "${shortDay(day)} by hour",
+                style = T.bold(15), modifier = Modifier.weight(1f)
+            )
+            Row(Modifier.background(C.Faint, CircleShape).padding(3.dp)) {
+                listOf(true to "By hour", false to "Week").forEach { (v, label) ->
+                    val on = byHour == v
+                    val bg by animateColorAsState(if (on) C.Gold else Color.Transparent, tween(220), label = "segBg")
+                    Text(
+                        label,
+                        style = T.bold(12, if (on) Color(0xFF4A3600) else C.Muted),
+                        modifier = Modifier
+                            .clip(CircleShape)
+                            .background(bg)
+                            .clickable { byHour = v }
+                            .padding(horizontal = 12.dp, vertical = 5.dp)
+                    )
+                }
+            }
+        }
+        if (byHour) {
+            Box(
+                Modifier
+                    .fillMaxWidth()
+                    .background(C.GoldCard, RoundedCornerShape(12.dp))
+                    .padding(vertical = 7.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    if (hours[sel] == 0 && hours.sum() == 0) "No steps logged by hour yet"
+                    else "${hourLabel(sel)} – ${hourLabel(sel + 1)} · ${fmt(hours[sel])} steps",
+                    style = T.bold(13, C.GoldText)
+                )
+            }
+            val top = maxOf(hours.maxOrNull() ?: 0, 1)
+            var started by remember { mutableStateOf(false) }
+            LaunchedEffect(Unit) { started = true }
+            val grow by animateFloatAsState(if (started) 1f else 0f, tween(800, easing = FastOutSlowInEasing), label = "hourBars")
+            Row(
+                Modifier
+                    .fillMaxWidth()
+                    .height(140.dp),
+                horizontalArrangement = Arrangement.spacedBy(3.dp),
+                verticalAlignment = Alignment.Bottom
+            ) {
+                range.forEach { h ->
+                    val v = hours[h]
+                    val color = if (v >= StepLog.WALK_MIN_STEPS) C.Gold else C.GoldIdle
+                    Box(
+                        Modifier
+                            .weight(1f)
+                            .fillMaxHeight()
+                            .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { picked = h },
+                        contentAlignment = Alignment.BottomCenter
+                    ) {
+                        Box(
+                            Modifier
+                                .fillMaxWidth()
+                                .fillMaxHeight((v.toFloat() / top).coerceIn(0.03f, 1f) * grow)
+                                .background(color, RoundedCornerShape(topStart = 5.dp, topEnd = 5.dp, bottomStart = 2.dp, bottomEnd = 2.dp))
+                                .then(if (h == sel) Modifier.border(2.dp, C.GoldText, RoundedCornerShape(5.dp)) else Modifier)
+                        )
+                    }
+                }
+            }
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                listOf(first, 9, 12, 15, 18, 21).distinct().filter { it in range }.forEach {
+                    Text(hourLabel(it), style = T.bold(11, C.Muted))
+                }
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+                Legend(C.Gold, "Hours with a walk (500+)")
+                Legend(C.GoldIdle, "Light moving")
+            }
+        } else {
+            WeekBars(state, Track.STEPS, "Last 7 days", Modifier.fillMaxWidth().height(170.dp))
+        }
+    }
+}
+
+@Composable
+private fun Legend(color: Color, text: String) {
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        Box(Modifier.size(10.dp).background(color, RoundedCornerShape(3.dp)))
+        Text(text, style = T.body(12, C.Muted))
+    }
+}
+
+/** A timeline of the day's walks: 500+ steps in a row, with start and end time. */
+@Composable
+private fun WalksCard(walks: List<Walk>, title: String) {
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .background(C.Surface, RoundedCornerShape(18.dp))
+            .border(2.dp, C.Line, RoundedCornerShape(18.dp))
+            .padding(14.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp)
+    ) {
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Text(title, style = T.bold(15), modifier = Modifier.weight(1f))
+            Text("500+ steps in a row", style = T.body(12, C.Muted))
+        }
+        if (walks.isEmpty()) {
+            Text(
+                "No walks yet. Walk 500 steps in a row and it shows up here with the time.",
+                style = T.body(13, C.Muted),
+                modifier = Modifier.padding(top = 6.dp)
+            )
+        }
+        walks.forEachIndexed { i, w ->
+            Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                Column(Modifier.width(20.dp).fillMaxHeight(), horizontalAlignment = Alignment.CenterHorizontally) {
+                    Spacer(Modifier.height(16.dp))
+                    Box(
+                        Modifier
+                            .size(14.dp)
+                            .background(C.Gold, CircleShape)
+                            .border(3.dp, C.GoldSoft, CircleShape)
+                    )
+                    if (i < walks.lastIndex) {
+                        Box(Modifier.width(3.dp).weight(1f).background(C.GoldLine, RoundedCornerShape(2.dp)))
+                    }
+                }
+                Row(
+                    Modifier
+                        .weight(1f)
+                        .padding(vertical = 5.dp)
+                        .background(C.GoldCard, RoundedCornerShape(14.dp))
+                        .padding(horizontal = 12.dp, vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(Modifier.weight(1f)) {
+                        Text("${clock(w.startMin)} – ${clock(w.endMin)}", style = T.bold(14))
+                        Text("${walkName(w.startMin)} · ${w.minutes} min", style = T.body(12, C.Muted))
+                    }
+                    Text(fmt(w.steps), style = T.display(18, C.GoldText))
+                }
+            }
+        }
+        if (walks.isNotEmpty()) {
+            Text(
+                "${walks.size} ${if (walks.size == 1) "walk" else "walks"} · ${walks.sumOf { it.minutes }} min on your feet",
+                style = T.body(12, C.Muted),
+                modifier = Modifier.padding(top = 4.dp)
+            )
+        }
+    }
+}
+
+private fun walkName(startMin: Int): String = when (startMin / 60) {
+    in 4..10 -> "Morning walk"
+    in 11..13 -> "Lunch walk"
+    in 14..16 -> "Afternoon walk"
+    in 17..20 -> "Evening walk"
+    else -> "Night walk"
 }

@@ -301,6 +301,8 @@ object Store {
             if (oldest != null) {
                 delete("day", "date < ?", arrayOf(oldest))
                 delete("entry", "date < ?", arrayOf(oldest))
+                delete("step_hour", "date < ?", arrayOf(oldest))
+                delete("walk", "date < ?", arrayOf(oldest))
             } else if (s.history.isEmpty() && !before.isNullOrEmpty()) {
                 delete("day", null, null)
             }
@@ -444,7 +446,7 @@ object Store {
                 }
             }
         }
-        val avatar = o.optString("avatar", def.avatar).takeIf { it in AVATAR_IDS } ?: def.avatar
+        val avatar = o.optString("avatar", def.avatar).takeIf { it in AVATAR_IDS || it == "photo" } ?: def.avatar
         return AppState(
             onboarded = o.optBoolean("onboarded", false),
             name = o.optString("name", ""),
