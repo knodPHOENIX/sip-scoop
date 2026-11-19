@@ -21,6 +21,8 @@ object StepLog {
     private const val GAP_MIN = 6
     /** Roughly how many steps a minute of walking is. */
     private const val STEPS_PER_MIN = 100
+    /** Longer than this between two checks and we can't tell when the steps happened. */
+    private const val LONG_GAP_MIN = 30
 
     private const val PREFS = "step_log"
 
@@ -37,19 +39,31 @@ object StepLog {
             closeWalk(context, db)
         }
 
-        var logged = if (prefs.getString("logged_date", null) == today) prefs.getInt("logged", 0) else 0
+        val loggedToday = prefs.getString("logged_date", null) == today
+        var logged = if (loggedToday) prefs.getInt("logged", 0) else 0
+        // When the last steps were logged (minutes after midnight), -1 if not yet today.
+        val loggedMin = if (loggedToday) prefs.getInt("logged_min", -1) else -1
         if (state.steps < logged) logged = state.steps // a reset or a correction
         val delta = state.steps - logged
         val edit = prefs.edit().putString("logged_date", today).putInt("logged", state.steps)
+        if (sameDay) edit.putInt("logged_min", nowMin)
 
         if (delta > 0 && sameDay) {
-            // Works on every Android version (no "upsert" before Android 11).
-            db.execSQL("INSERT OR IGNORE INTO step_hour (date, hour, steps) VALUES (?, ?, 0)", arrayOf<Any>(today, now.hour))
-            db.execSQL("UPDATE step_hour SET steps = steps + ? WHERE date = ? AND hour = ?", arrayOf<Any>(delta, today, now.hour))
+            // How long these steps took at a normal walking pace.
+            val took = (delta + STEPS_PER_MIN - 1) / STEPS_PER_MIN
+            // The app may not have been able to check for a while: then we don't know when
+            // the steps happened, so they are spread over that time instead of one hour.
+            val from = if (loggedMin in 0..nowMin) loggedMin else maxOf(0, nowMin - took)
+            addToHours(db, today, from, nowMin, delta)
+            val gap = nowMin - from
+            if (loggedMin < 0 || gap > LONG_GAP_MIN) {
+                // Timing unknown: don't invent a walk from these steps.
+                edit.apply()
+                if (prefs.getString("walk_date", null) == today) closeWalk(context, db)
+                return@runCatching
+            }
             val open = prefs.getString("walk_date", null) == today
             val lastMin = prefs.getInt("walk_last", -1)
-            // How long these steps took, at most since the last reading.
-            val took = (delta + STEPS_PER_MIN - 1) / STEPS_PER_MIN
             if (open && lastMin >= 0 && nowMin - lastMin - took <= GAP_MIN) {
                 edit.putInt("walk_last", nowMin).putInt("walk_steps", prefs.getInt("walk_steps", 0) + delta)
             } else {
@@ -70,6 +84,31 @@ object StepLog {
             }
         }
         edit.apply()
+    }
+
+    /** Adds [steps] to the hours between [fromMin] and [toMin], in proportion to the minutes in each. */
+    private fun addToHours(db: android.database.sqlite.SQLiteDatabase, date: String, fromMin: Int, toMin: Int, steps: Int) {
+        val shares = IntArray(24)
+        val span = toMin - fromMin
+        if (span <= 0) {
+            shares[(toMin / 60).coerceIn(0, 23)] = steps
+        } else {
+            var given = 0
+            for (h in (fromMin / 60)..(toMin / 60).coerceAtMost(23)) {
+                val minutes = minOf(toMin, (h + 1) * 60) - maxOf(fromMin, h * 60)
+                if (minutes <= 0) continue
+                val part = (steps.toLong() * minutes / span).toInt()
+                shares[h] += part
+                given += part
+            }
+            shares[(toMin / 60).coerceIn(0, 23)] += steps - given // rounding leftovers
+        }
+        for (h in 0..23) {
+            if (shares[h] <= 0) continue
+            // Works on every Android version (no "upsert" before Android 11).
+            db.execSQL("INSERT OR IGNORE INTO step_hour (date, hour, steps) VALUES (?, ?, 0)", arrayOf<Any>(date, h))
+            db.execSQL("UPDATE step_hour SET steps = steps + ? WHERE date = ? AND hour = ?", arrayOf<Any>(shares[h], date, h))
+        }
     }
 
     /** Saves the walk in progress if it was long enough, and forgets it. */

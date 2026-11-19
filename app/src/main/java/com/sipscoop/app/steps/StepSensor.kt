@@ -97,8 +97,13 @@ object StepSensor {
 /** Fires about once an hour so steps (and the widget) stay fresh while the app is closed. */
 class StepSnapshotReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
-        if (intent.action != StepSensor.ACTION_SNAPSHOT) return
+        val action = intent.action
+        if (action != StepSensor.ACTION_SNAPSHOT && action != MidnightCheck.ACTION) return
         val pending = goAsync()
-        StepSensor.snapshot(context) { pending.finish() }
+        StepSensor.snapshot(context) {
+            // Book the next reading around midnight.
+            if (action == MidnightCheck.ACTION) MidnightCheck.schedule(context, true)
+            pending.finish()
+        }
     }
 }

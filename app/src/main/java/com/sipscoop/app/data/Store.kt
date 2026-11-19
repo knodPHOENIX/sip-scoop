@@ -69,6 +69,8 @@ data class AppState(
     val stepPrior: Int = 0,
     /** Last raw value read from the phone's step counter. */
     val stepLast: Long = -1,
+    /** When [stepLast] was read (milliseconds; 0 = not known). */
+    val stepLastAt: Long = 0,
     val remindSteps: Boolean = true,
     /** Tracker view: false = Classic (glass, bar, ring), true = Rings (one set of rings for all three). */
     val ringsView: Boolean = false,
@@ -143,27 +145,55 @@ fun AppState.resetToday(): AppState = copy(water = emptyList(), protein = emptyL
 const val STEP_GOAL_MAX = 50000
 const val STEP_DAY_MAX = 100000
 
+/** At most this many steps a minute are believed (fast running is about 200). */
+const val STEPS_PER_MIN_MAX = 250
+
 /**
  * Takes a fresh reading from the phone's step counter (steps since the phone last started)
- * and works out today's steps from it. Handles a new day and a phone restart.
+ * and works out today's steps from it. Handles a new day, a phone restart, long gaps between
+ * readings and impossible jumps.
+ *
+ * The counter only says how many steps happened since the last reading, not when. So when
+ * the last reading was before midnight (for example the app could not check for a day or
+ * two), only the part of those steps that falls on today, by time, is counted for today.
  */
-fun AppState.withStepReading(total: Long): AppState {
+fun AppState.withStepReading(total: Long, now: Long = System.currentTimeMillis()): AppState {
     if (total < 0) return this
     var base = stepBase
     var prior = stepPrior
+    val midnight = LocalDate.now().atStartOfDay(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli()
+
+    // How many of [newSteps] (taken since the last reading) belong to today.
+    fun todayShare(newSteps: Long): Long {
+        if (newSteps <= 0) return 0
+        if (stepLastAt <= 0 || stepLastAt > now) return 0 // unknown: start counting from now
+        if (stepLastAt >= midnight) return newSteps
+        val elapsed = (now - stepLastAt).coerceAtLeast(1)
+        val inToday = (now - midnight).coerceIn(0, elapsed)
+        return newSteps * inToday / elapsed
+    }
+
     if (stepLast >= 0 && total < stepLast) {
-        // The counter went backwards: the phone restarted. Keep what was counted so far.
+        // The counter went backwards: the phone restarted and counts again from 0.
         prior = steps
-        base = 0
+        base = total - todayShare(total)
     } else if (base < 0) {
-        // First reading of the day: start from the last value seen, so steps taken since
-        // then (for example after midnight) are not lost.
-        base = if (stepLast in 0..total) stepLast else total
+        // First reading of the day.
+        base = total - (if (stepLast >= 0) todayShare(total - stepLast) else 0)
         prior = 0
+    } else if (stepLast >= 0 && stepLastAt in 1..now) {
+        // Ignore impossible jumps: some phones' counters glitch upwards.
+        val jump = total - stepLast
+        val minutes = (now - stepLastAt) / 60_000
+        val most = STEPS_PER_MIN_MAX * minutes + 300
+        if (jump > most) base += jump - most
     }
     val today = (prior + (total - base)).toInt().coerceIn(0, STEP_DAY_MAX)
-    return if (today == steps && base == stepBase && prior == stepPrior && total == stepLast) this
-    else copy(steps = today, stepBase = base, stepPrior = prior, stepLast = total)
+    if (today == steps && base == stepBase && prior == stepPrior && total == stepLast) {
+        // Nothing new: only note the time now and then, so gaps are measured correctly.
+        return if (now - stepLastAt > 60_000) copy(stepLastAt = now) else this
+    }
+    return copy(steps = today, stepBase = base, stepPrior = prior, stepLast = total, stepLastAt = now)
 }
 
 /** About 0.76 m per step and 0.04 kcal per step for an average adult. */
@@ -418,6 +448,7 @@ object Store {
             .put("stepBase", s.stepBase)
             .put("stepPrior", s.stepPrior)
             .put("stepLast", s.stepLast)
+            .put("stepLastAt", s.stepLastAt)
             .put("remindSteps", s.remindSteps)
             .put("ringsView", s.ringsView)
             .put("stepNotify", s.stepNotify)
@@ -478,6 +509,7 @@ object Store {
             stepBase = o.optLong("stepBase", -1),
             stepPrior = o.optInt("stepPrior", 0),
             stepLast = o.optLong("stepLast", -1),
+            stepLastAt = o.optLong("stepLastAt", 0),
             remindSteps = o.optBoolean("remindSteps", def.remindSteps),
             ringsView = o.optBoolean("ringsView", def.ringsView),
             stepNotify = o.optBoolean("stepNotify", def.stepNotify)

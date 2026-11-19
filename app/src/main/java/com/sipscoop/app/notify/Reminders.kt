@@ -51,13 +51,16 @@ object Reminders {
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
         )
         am.cancel(snapshot)
+        com.sipscoop.app.steps.MidnightCheck.schedule(context, s.onboarded)
         if (!s.onboarded) return
 
         if (StepSensor.available(context)) {
             // Read the step counter about every 15 minutes, so walks get the right time
             // and steps stay right across midnight.
+            // RTC_WAKEUP: also checks while the phone sleeps (Android batches these to save battery),
+            // so long gaps between readings, which make steps hard to place, are rare.
             am.setInexactRepeating(
-                AlarmManager.RTC, System.currentTimeMillis() + AlarmManager.INTERVAL_FIFTEEN_MINUTES,
+                AlarmManager.RTC_WAKEUP, System.currentTimeMillis() + AlarmManager.INTERVAL_FIFTEEN_MINUTES,
                 AlarmManager.INTERVAL_FIFTEEN_MINUTES, snapshot
             )
             if (s.remindSteps) {
@@ -195,8 +198,13 @@ class ReminderReceiver : BroadcastReceiver() {
 /** Puts the reminders back after the phone restarts. */
 class BootReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
-        if (intent.action == Intent.ACTION_BOOT_COMPLETED) {
-            Reminders.schedule(context, Store.load(context))
+        when (intent.action) {
+            Intent.ACTION_BOOT_COMPLETED, Intent.ACTION_TIME_CHANGED, Intent.ACTION_TIMEZONE_CHANGED -> {
+                Reminders.schedule(context, Store.load(context))
+                // Read the step counter right away, so a restart or a clock change is noted.
+                val pending = goAsync()
+                com.sipscoop.app.steps.StepSensor.snapshot(context) { pending.finish() }
+            }
         }
     }
 }
