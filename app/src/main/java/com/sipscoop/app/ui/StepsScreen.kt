@@ -306,7 +306,7 @@ private fun DayPicker(today: LocalDate, back: Int, onPick: (Int) -> Unit) {
                     Modifier
                         .weight(1f)
                         .background(bg, RoundedCornerShape(14.dp))
-                        .border(2.dp, if (on) C.GoldEdge else C.Line, RoundedCornerShape(14.dp))
+                        .border(1.dp, if (on) C.GoldEdge else C.Line, RoundedCornerShape(14.dp))
                         .clickable { onPick(b) }
                         .padding(vertical = 7.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
@@ -337,7 +337,7 @@ private fun ActivityChart(state: AppState, hours: IntArray, back: Int, day: Loca
         Modifier
             .fillMaxWidth()
             .background(C.Surface, RoundedCornerShape(18.dp))
-            .border(2.dp, C.Line, RoundedCornerShape(18.dp))
+            .border(1.dp, C.Line, RoundedCornerShape(18.dp))
             .padding(14.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
@@ -402,7 +402,7 @@ private fun ActivityChart(state: AppState, hours: IntArray, back: Int, day: Loca
                                 .fillMaxWidth()
                                 .fillMaxHeight((v.toFloat() / top).coerceIn(0.03f, 1f) * grow)
                                 .background(color, RoundedCornerShape(topStart = 5.dp, topEnd = 5.dp, bottomStart = 2.dp, bottomEnd = 2.dp))
-                                .then(if (h == sel) Modifier.border(2.dp, C.GoldText, RoundedCornerShape(5.dp)) else Modifier)
+                                .then(if (h == sel) Modifier.border(1.dp, C.GoldText, RoundedCornerShape(5.dp)) else Modifier)
                         )
                     }
                 }
@@ -437,7 +437,7 @@ private fun WalksCard(walks: List<Walk>, title: String) {
         Modifier
             .fillMaxWidth()
             .background(C.Surface, RoundedCornerShape(18.dp))
-            .border(2.dp, C.Line, RoundedCornerShape(18.dp))
+            .border(1.dp, C.Line, RoundedCornerShape(18.dp))
             .padding(14.dp),
         verticalArrangement = Arrangement.spacedBy(4.dp)
     ) {
@@ -460,7 +460,7 @@ private fun WalksCard(walks: List<Walk>, title: String) {
                         Modifier
                             .size(14.dp)
                             .background(C.Gold, CircleShape)
-                            .border(3.dp, C.GoldSoft, CircleShape)
+                            .border(1.dp, C.GoldSoft, CircleShape)
                     )
                     if (i < walks.lastIndex) {
                         Box(Modifier.width(3.dp).weight(1f).background(C.GoldLine, RoundedCornerShape(2.dp)))

@@ -177,7 +177,7 @@ fun MainScreen(
                     val bg = if (rings) ringsTint(pos) else C.Bg
                     Column(Modifier.fillMaxSize().background(bg)) {
                     // Fixed top: greeting, streaks and profile stay put while the pages slide.
-                    Box(Modifier.padding(start = 20.dp, end = 20.dp, top = 18.dp, bottom = 6.dp)) {
+                    Box(Modifier.padding(start = 20.dp, end = 20.dp, top = 14.dp, bottom = 4.dp)) {
                         GreetingHeader(
                             state.firstName, state.stepStreak, state.streak, state.avatar,
                             onStepStreak = { calendar = "steps" },
@@ -244,7 +244,7 @@ fun MainScreen(
                 Modifier
                     .fillMaxWidth()
                     .background(C.Surface, RoundedCornerShape(16.dp))
-                    .border(2.dp, C.Green.copy(alpha = 0.55f), RoundedCornerShape(16.dp))
+                    .border(1.dp, C.Green.copy(alpha = 0.55f), RoundedCornerShape(16.dp))
                     .padding(horizontal = 14.dp, vertical = 12.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(10.dp)
@@ -313,26 +313,8 @@ fun Splash(onDone: () -> Unit) {
     Box(
         Modifier
             .fillMaxSize()
-            .background(C.Blue)
+            .background(Color(0xFF0B0D10))
     ) {
-        Canvas(Modifier.fillMaxSize()) {
-            val w = size.width
-            val h = size.height
-            drawCircle(Color(0xFF5CBDF8), 14.dp.toPx(), Offset(w * 0.15f, h * 0.17f))
-            drawCircle(Color(0xFF5CBDF8), 7.dp.toPx(), Offset(w * 0.25f, h * 0.23f))
-            drawCircle(Color(0xFF5CBDF8), 18.dp.toPx(), Offset(w * 0.85f, h * 0.3f))
-            drawCircle(Color(0xFF5CBDF8), 8.dp.toPx(), Offset(w * 0.77f, h * 0.14f))
-            drawCircle(Color(0xFF5CBDF8), 10.dp.toPx(), Offset(w * 0.11f, h * 0.66f))
-            val top = h * 0.82f
-            val waveH = 13.dp.toPx()
-            val wave = Path().apply {
-                moveTo(0f, top)
-                cubicTo(w * 0.18f, top - waveH, w * 0.33f, top + waveH, w * 0.5f, top)
-                cubicTo(w * 0.67f, top - waveH, w * 0.82f, top + waveH, w, top)
-                lineTo(w, h); lineTo(0f, h); close()
-            }
-            drawPath(wave, C.BlueDeep)
-        }
         Column(
             Modifier
                 .fillMaxSize()
@@ -345,19 +327,19 @@ fun Splash(onDone: () -> Unit) {
             val icon = remember { AppIconSwitcher.current(context) }
             Box(
                 Modifier
-                    .graphicsLayer { translationY = bob * density }
+                    .graphicsLayer { translationY = bob * 0.25f * density }
                     .shadow(18.dp, RoundedCornerShape(36.dp))
             ) { AppIconPreview(icon, 156.dp) }
             Spacer(Modifier.height(26.dp))
-            Text("Sip & Scoop", style = T.display(46, Color.White))
-            Text("Walk. Hydrate. Fuel up.", style = T.bold(18, Color(0xFFE6F5FE)))
+            Text("Sip & Scoop", style = T.display(40, Color(0xFFF2F4F7)))
+            Text("Walk. Hydrate. Fuel up.", style = T.body(16, Color(0xFF8B93A1)))
             Spacer(Modifier.weight(1.2f))
             Box(
                 Modifier
                     .fillMaxWidth()
-                    .height(18.dp)
+                    .height(4.dp)
                     .clip(CircleShape)
-                    .background(Color(0xFF0F6CAD))
+                    .background(Color(0xFF23272E))
             ) {
                 Box(
                     Modifier
@@ -368,7 +350,7 @@ fun Splash(onDone: () -> Unit) {
                 )
             }
             Spacer(Modifier.height(14.dp))
-            Text("Filling your glass…", style = T.bold(15, Color.White))
+            Text("Filling your glass…", style = T.body(13, Color(0xFF8B93A1)))
         }
     }
 }

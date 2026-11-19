@@ -100,7 +100,7 @@ fun EditReadingDialog(
                                 Modifier
                                     .weight(1f)
                                     .background(C.Surface, RoundedCornerShape(12.dp))
-                                    .border(2.dp, if (suspicious) C.Red else C.Line, RoundedCornerShape(12.dp))
+                                    .border(1.dp, if (suspicious) C.Red else C.Line, RoundedCornerShape(12.dp))
                                     .padding(horizontal = 12.dp, vertical = 9.dp)
                             ) {
                                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -151,7 +151,7 @@ fun EditReadingDialog(
                         Modifier
                             .width(120.dp)
                             .background(C.Surface, RoundedCornerShape(12.dp))
-                            .border(2.dp, C.Line, RoundedCornerShape(12.dp))
+                            .border(1.dp, C.Line, RoundedCornerShape(12.dp))
                             .padding(horizontal = 12.dp, vertical = 9.dp)
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically) {

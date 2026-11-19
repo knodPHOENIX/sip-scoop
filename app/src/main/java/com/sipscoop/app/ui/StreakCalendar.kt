@@ -156,7 +156,7 @@ fun StreakCalendarDialog(state: AppState, steps: Boolean, onDismiss: () -> Unit)
                                             },
                                             RoundedCornerShape(10.dp)
                                         )
-                                    if (isToday) box = box.border(2.5.dp, if (h) C.Ink else color, RoundedCornerShape(10.dp))
+                                    if (isToday) box = box.border(1.dp, if (h) C.Ink else color, RoundedCornerShape(10.dp))
                                     Box(box, contentAlignment = Alignment.Center) {
                                         Text(
                                             "${d.dayOfMonth}",

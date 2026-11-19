@@ -521,7 +521,7 @@ fun InlineNumber(value: Int, unit: String, accent: Accent, onChange: (Int) -> Un
         modifier = modifier
             .heightIn(min = 60.dp)
             .background(accent.card, RoundedCornerShape(16.dp))
-            .border(2.dp, accent.face.copy(alpha = 0.5f), RoundedCornerShape(16.dp))
+            .border(1.dp, accent.face.copy(alpha = 0.5f), RoundedCornerShape(16.dp))
             .padding(horizontal = 8.dp, vertical = 6.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
@@ -567,7 +567,7 @@ fun InlineText(value: String, onChange: (String) -> Unit, modifier: Modifier = M
         cursorBrush = SolidColor(C.Orange),
         modifier = modifier
             .background(C.Surface, RoundedCornerShape(12.dp))
-            .border(2.dp, C.OrangeLine, RoundedCornerShape(12.dp))
+            .border(1.dp, C.OrangeLine, RoundedCornerShape(12.dp))
             .padding(horizontal = 12.dp, vertical = 12.dp)
     )
 }

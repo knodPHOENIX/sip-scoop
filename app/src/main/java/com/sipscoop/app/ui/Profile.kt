@@ -145,7 +145,7 @@ private fun Card(content: @Composable ColumnScope.() -> Unit) {
         Modifier
             .fillMaxWidth()
             .background(C.Surface, RoundedCornerShape(18.dp))
-            .border(2.dp, C.Line, RoundedCornerShape(18.dp)),
+            .border(1.dp, C.Line, RoundedCornerShape(18.dp)),
         content = content
     )
 }
@@ -215,7 +215,7 @@ fun AvatarGrid(selected: String, onPick: (String) -> Unit, tile: Int = 84) {
                                     .offset(x = 6.dp, y = (-6).dp)
                                     .size(28.dp)
                                     .background(C.Green, CircleShape)
-                                    .border(3.dp, C.Bg, CircleShape),
+                                    .border(1.dp, C.Bg, CircleShape),
                                 contentAlignment = Alignment.Center
                             ) { LineIcon(Ic.CHECK, Color.White, 14.dp, 4f) }
                         }
@@ -303,7 +303,7 @@ fun ProfileScreen(
                 Modifier
                     .fillMaxWidth()
                     .background(C.RedSoft, RoundedCornerShape(14.dp))
-                    .border(2.dp, C.RedLine, RoundedCornerShape(14.dp))
+                    .border(1.dp, C.RedLine, RoundedCornerShape(14.dp))
                     .clickable { showLogout = true }
                     .padding(vertical = 11.dp),
                 verticalAlignment = Alignment.CenterVertically,
@@ -487,7 +487,7 @@ fun AppearanceScreen(
             Modifier
                 .fillMaxWidth()
                 .background(C.Surface, RoundedCornerShape(20.dp))
-                .border(2.dp, C.Line, RoundedCornerShape(20.dp))
+                .border(1.dp, C.Line, RoundedCornerShape(20.dp))
                 .padding(14.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
@@ -563,7 +563,7 @@ private fun ViewCard(
     Column(
         modifier
             .background(bg, RoundedCornerShape(16.dp))
-            .border(2.dp, border, RoundedCornerShape(16.dp))
+            .border(1.dp, border, RoundedCornerShape(16.dp))
             .clickable(onClick = onClick)
             .padding(vertical = 10.dp, horizontal = 6.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -577,8 +577,8 @@ private fun ViewCard(
 
 @Composable
 fun ClassicPreview() {
-    val glass = C.pickColor(0xFFF1F8FD, 0xFF152536)
-    val glassLine = C.pickColor(0xFFB9D3E6, 0xFF35546B)
+    val glass = C.Glass
+    val glassLine = C.Line
     val oCard = C.OrangeSoft
     val gCard = C.GoldSoft
     Canvas(Modifier.fillMaxSize()) {
@@ -640,8 +640,8 @@ private fun ThemeCard(mode: String, selected: Boolean, modifier: Modifier, onCli
                     drawRoundRect(C.Orange, topLeft = Offset(pad * 2 + (size.width - pad * 3) / 2, size.height - pad - 20.dp.toPx()), size = androidx.compose.ui.geometry.Size((size.width - pad * 3) / 2, 20.dp.toPx()), cornerRadius = androidx.compose.ui.geometry.CornerRadius(6.dp.toPx()))
                 }
             }
-            val light = Triple(Color(0xFFFFFFFF), Color(0xFFEAF6FE), Color(0xFFD6E2EC))
-            val dark = Triple(Color(0xFF0F1923), Color(0xFF142B3E), Color(0xFF2C3D4D))
+            val light = Triple(Color(0xFFFFFFFF), Color(0xFFF4F5F7), Color(0xFFE3E6EA))
+            val dark = Triple(Color(0xFF0B0D10), Color(0xFF15181D), Color(0xFF2A2F37))
             when (mode) {
                 "light" -> phone(light.first, light.second, light.third, 0f, size.width)
                 "dark" -> phone(dark.first, dark.second, dark.third, 0f, size.width)
@@ -656,7 +656,7 @@ private fun ThemeCard(mode: String, selected: Boolean, modifier: Modifier, onCli
             Box(
                 Modifier
                     .size(18.dp)
-                    .border(2.dp, if (selected) C.Blue else C.Line, CircleShape)
+                    .border(1.dp, if (selected) C.Blue else C.Line, CircleShape)
                     .padding(4.dp)
                     .background(if (selected) C.Blue else Color.Transparent, CircleShape)
             )
@@ -909,7 +909,7 @@ fun HistoryScreen(state: AppState, onBack: () -> Unit) {
             Modifier
                 .fillMaxWidth()
                 .background(C.Surface, RoundedCornerShape(20.dp))
-                .border(2.dp, C.Line, RoundedCornerShape(20.dp))
+                .border(1.dp, C.Line, RoundedCornerShape(20.dp))
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
@@ -979,7 +979,7 @@ fun HistoryScreen(state: AppState, onBack: () -> Unit) {
                     Modifier
                         .fillMaxWidth()
                         .background(C.Surface, RoundedCornerShape(16.dp))
-                        .border(2.dp, C.Line, RoundedCornerShape(16.dp))
+                        .border(1.dp, C.Line, RoundedCornerShape(16.dp))
                         .padding(horizontal = 12.dp, vertical = 10.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -1105,7 +1105,7 @@ fun EditProfileDialog(state: AppState, onDismiss: () -> Unit, onSave: (String, S
             Modifier
                 .size(84.dp)
                 .background(C.BlueSoft, CircleShape)
-                .border(3.dp, C.Blue, CircleShape)
+                .border(1.dp, C.Blue, CircleShape)
                 .padding(6.dp)
         ) {
             AnimatedContent(
@@ -1145,7 +1145,7 @@ fun EditProfileDialog(state: AppState, onDismiss: () -> Unit, onSave: (String, S
                                     .weight(1f)
                                     .height(66.dp)
                                     .background(C.Faint, RoundedCornerShape(16.dp))
-                                    .border(2.dp, C.BlueStreakLine, RoundedCornerShape(16.dp))
+                                    .border(1.dp, C.BlueStreakLine, RoundedCornerShape(16.dp))
                                     .clickable(enabled = !loading) {
                                         picker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
                                     },
@@ -1177,7 +1177,7 @@ fun EditProfileDialog(state: AppState, onDismiss: () -> Unit, onSave: (String, S
                                         .offset(x = 6.dp, y = (-6).dp)
                                         .size(22.dp)
                                         .background(C.Blue, CircleShape)
-                                        .border(2.dp, C.Surface, CircleShape),
+                                        .border(1.dp, C.Surface, CircleShape),
                                     contentAlignment = Alignment.Center
                                 ) { LineIcon(Ic.CHECK, Color.White, 11.dp, 4f) }
                             }

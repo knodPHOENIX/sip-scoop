@@ -184,7 +184,7 @@ private fun MilestoneDot(done: Boolean, next: Boolean, trophy: Boolean) {
                 .graphicsLayer { scaleX = scale; scaleY = scale }
                 .clip(CircleShape)
                 .background(bg)
-                .then(if (next) Modifier.border(3.dp, C.Orange, CircleShape) else Modifier),
+                .then(if (next) Modifier.border(1.dp, C.Orange, CircleShape) else Modifier),
             contentAlignment = Alignment.Center
         ) {
             Canvas(Modifier.size(18.dp)) {

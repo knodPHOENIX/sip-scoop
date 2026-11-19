@@ -6,6 +6,7 @@ import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.keyframes
@@ -68,7 +69,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import java.time.LocalTime
 
-/** The chunky button that sinks into its own edge when pressed. */
+/**
+ * The main button: flat, with a thin edge, that dips slightly when pressed. It keeps the
+ * same outer size the old raised button had, so nothing on screen moves.
+ */
 @Composable
 fun Btn3D(
     onClick: () -> Unit,
@@ -87,40 +91,28 @@ fun Btn3D(
 ) {
     val interaction = remember { MutableInteractionSource() }
     val pressed by interaction.collectIsPressedAsState()
-    val shift by animateDpAsState(
-        targetValue = if (pressed && enabled) depth - 1.dp else 0.dp,
-        animationSpec = spring(dampingRatio = 0.5f, stiffness = Spring.StiffnessHigh),
-        label = "press"
+    val scale by animateFloatAsState(if (pressed && enabled) 0.97f else 1f, tween(110), label = "press")
+    val shape = RoundedCornerShape(minOf(radius, 14.dp))
+    // A filled colour button gets a matching edge; an outlined one keeps its line colour.
+    val line = if (border == edge && face != C.Surface && face != C.Faint && face != C.Bg) face else border
+    Column(
+        modifier = modifier
+            .graphicsLayer {
+                scaleX = scale
+                scaleY = scale
+                alpha = if (pressed && enabled) 0.88f else 1f
+            }
+            .clickable(interactionSource = interaction, indication = null, enabled = enabled, onClick = onClick)
+            .then(if (fill) Modifier.fillMaxWidth() else Modifier)
+            .heightIn(min = minHeight + depth)
+            .background(face, shape)
+            .border(1.dp, line, shape)
+            .padding(contentPadding)
+            .padding(vertical = depth / 2),
+        horizontalAlignment = horizontalAlignment,
+        verticalArrangement = Arrangement.Center,
+        content = content
     )
-    val shape = RoundedCornerShape(radius)
-    Box(
-        modifier.clickable(
-            interactionSource = interaction,
-            indication = null,
-            enabled = enabled,
-            onClick = onClick
-        )
-    ) {
-        Box(
-            Modifier
-                .matchParentSize()
-                .padding(top = depth)
-                .background(edge, shape)
-        )
-        Column(
-            modifier = Modifier
-                .padding(bottom = depth)
-                .offset(y = shift)
-                .then(if (fill) Modifier.fillMaxWidth() else Modifier)
-                .heightIn(min = minHeight)
-                .background(face, shape)
-                .border(2.dp, border, shape)
-                .padding(contentPadding),
-            horizontalAlignment = horizontalAlignment,
-            verticalArrangement = Arrangement.Center,
-            content = content
-        )
-    }
 }
 
 /** A soft rounded button that squishes a little when pressed. */
@@ -137,8 +129,8 @@ fun SquishButton(
     val interaction = remember { MutableInteractionSource() }
     val pressed by interaction.collectIsPressedAsState()
     val scale by animateDpAsState(
-        targetValue = if (pressed) 92.dp else 100.dp,
-        animationSpec = spring(dampingRatio = 0.45f, stiffness = Spring.StiffnessMedium),
+        targetValue = if (pressed) 96.dp else 100.dp,
+        animationSpec = tween(110),
         label = "squish"
     )
     Box(
@@ -149,7 +141,7 @@ fun SquishButton(
             }
             .clickable(interactionSource = interaction, indication = null, onClick = onClick)
             .background(background, shape)
-            .then(if (borderColor != null) Modifier.border(2.dp, borderColor, shape) else Modifier)
+            .then(if (borderColor != null) Modifier.border(1.dp, borderColor, shape) else Modifier)
             .padding(contentPadding),
         contentAlignment = Alignment.Center,
         content = content
@@ -172,7 +164,7 @@ fun SectionLabel(text: String, modifier: Modifier = Modifier) {
 fun SpeechBubble(text: String, borderColor: Color, modifier: Modifier = Modifier) {
     Box(
         modifier
-            .border(2.dp, borderColor, RoundedCornerShape(16.dp))
+            .border(1.dp, borderColor, RoundedCornerShape(16.dp))
             .padding(horizontal = 14.dp, vertical = 10.dp)
     ) {
         Text(text, style = T.body(15))
@@ -196,7 +188,7 @@ fun NumberField(
         label = { Text(label) },
         suffix = { Text(suffix, style = T.bold(15, C.Muted)) },
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-        textStyle = TextStyle(fontFamily = Fonts.display, fontWeight = FontWeight.ExtraBold, fontSize = 22.sp, color = C.Ink),
+        textStyle = TextStyle(fontFamily = Fonts.display, fontWeight = FontWeight.Bold, fontSize = 22.sp, color = C.Ink),
         shape = RoundedCornerShape(14.dp),
         colors = OutlinedTextFieldDefaults.colors(
             focusedBorderColor = accent.face,
@@ -209,55 +201,38 @@ fun NumberField(
 }
 
 /**
- * A streak pill that gives a little wiggle every few seconds.
- * Gold shoe = step streak; blue lightning bolt = diet streak (water and protein).
+ * A small streak capsule. Gold shoe = step streak; blue bolt = diet streak (water and protein).
+ * Tapping it opens that streak's calendar.
  */
 @Composable
 fun StreakBadge(days: Int, steps: Boolean, onClick: () -> Unit = {}) {
-    val inf = rememberInfiniteTransition(label = "zap")
-    val rot by inf.animateFloat(
-        initialValue = 0f,
-        targetValue = 0f,
-        animationSpec = infiniteRepeatable(
-            keyframes {
-                durationMillis = 4000
-                0f at 3400
-                -14f at 3560
-                10f at 3720
-                0f at 3880
-            },
-            initialStartOffset = StartOffset(if (steps) 0 else 1400)
-        ),
-        label = "rot"
-    )
     Row(
         modifier = Modifier
             .clip(CircleShape)
             .clickable(onClickLabel = if (steps) "Open step streak calendar" else "Open diet streak calendar", onClick = onClick)
             .background(if (steps) C.YellowSoft else C.BlueSoft, CircleShape)
-            .border(2.dp, if (steps) C.YellowLine else C.BlueStreakLine, CircleShape)
-            .padding(start = 6.dp, end = 10.dp, top = 5.dp, bottom = 5.dp),
+            .border(1.dp, if (steps) C.YellowLine else C.BlueStreakLine, CircleShape)
+            .heightIn(min = 26.dp)
+            .padding(start = 8.dp, end = 10.dp, top = 3.dp, bottom = 3.dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(3.dp)
+        horizontalArrangement = Arrangement.spacedBy(5.dp)
     ) {
-        Box(Modifier.size(21.dp).graphicsLayer { rotationZ = rot }, contentAlignment = Alignment.Center) {
-            if (steps) {
-                ShoeIcon(21.dp)
-            } else {
-                Canvas(Modifier.size(21.dp)) {
-                    inViewBox(0f, 0f, 24f, 24f) {
-                        val bolt = Path().apply {
+        if (steps) {
+            ShoeIcon(15.dp)
+        } else {
+            Canvas(Modifier.size(14.dp)) {
+                inViewBox(0f, 0f, 24f, 24f) {
+                    drawPath(
+                        Path().apply {
                             moveTo(13.5f, 2f); lineTo(4.5f, 13.5f); lineTo(11f, 13.5f)
                             lineTo(9.5f, 22f); lineTo(19.5f, 9.5f); lineTo(13f, 9.5f); close()
-                        }
-                        drawPath(bolt, C.Blue)
-                        drawPath(bolt, Color(0xFF1477BE), style = Stroke(width = 1.6f, join = StrokeJoin.Round))
-                        drawLine(Color(0xFF9FD8FB), Offset(12.4f, 5.5f), Offset(8f, 11.5f), strokeWidth = 1.6f, cap = StrokeCap.Round)
-                    }
+                        },
+                        C.Blue
+                    )
                 }
             }
         }
-        Text("$days", style = T.display(17, if (steps) C.YellowText else C.BlueDark))
+        Text("$days", style = T.bold(13, if (steps) C.YellowText else C.BlueDark))
     }
 }
 
@@ -316,29 +291,35 @@ fun GreetingHeader(
     onDietStreak: () -> Unit = {},
     onProfile: () -> Unit
 ) {
-    val (text, part) = greeting()
+    val (text, _) = greeting()
+    val date = remember {
+        java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("EEE d MMM", java.util.Locale.getDefault()))
+    }
     Row(
         modifier = Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
+        verticalAlignment = Alignment.Top,
+        horizontalArrangement = Arrangement.spacedBy(10.dp)
     ) {
-        Column(Modifier.weight(1f)) {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                DayIcon(part)
-                Text("$text,", style = T.bold(14, C.Muted))
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Text(date.uppercase(), style = T.label())
+            Text("$text, $name", style = T.display(22), maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
+            Row(
+                Modifier.padding(top = 6.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                StreakBadge(stepStreak, steps = true, onClick = onStepStreak)
+                StreakBadge(dietStreak, steps = false, onClick = onDietStreak)
             }
-            Text(name, style = T.display(28), maxLines = 1)
         }
-        StreakBadge(stepStreak, steps = true, onClick = onStepStreak)
-        StreakBadge(dietStreak, steps = false, onClick = onDietStreak)
         SquishButton(
             onClick = onProfile,
-            background = C.Bg,
+            background = C.Faint,
             shape = RoundedCornerShape(50),
-            borderColor = C.Blue,
-            contentPadding = PaddingValues(2.dp)
+            borderColor = C.Line,
+            contentPadding = PaddingValues(1.dp)
         ) {
-            AvatarImage(avatar, Modifier.size(42.dp))
+            AvatarImage(avatar, Modifier.size(42.dp).clip(CircleShape))
         }
     }
 }
@@ -457,7 +438,7 @@ fun NoteBox(text: String, warning: Boolean) {
         Modifier
             .fillMaxWidth()
             .background(bg, RoundedCornerShape(14.dp))
-            .border(2.dp, line, RoundedCornerShape(14.dp))
+            .border(1.dp, line, RoundedCornerShape(14.dp))
             .padding(horizontal = 12.dp, vertical = 10.dp),
         horizontalArrangement = Arrangement.spacedBy(10.dp)
     ) {
@@ -489,7 +470,8 @@ fun Popup(
                 .widthIn(max = 420.dp)
                 .fillMaxWidth()
                 .wrapContentHeight()
-                .background(C.Surface, RoundedCornerShape(26.dp))
+                .background(C.Surface, RoundedCornerShape(22.dp))
+                .border(1.dp, C.Line, RoundedCornerShape(22.dp))
         ) {
             Column(
                 Modifier
@@ -507,7 +489,7 @@ fun Popup(
                     .align(Alignment.TopEnd)
                     .padding(top = 12.dp, end = 12.dp),
                 contentPadding = PaddingValues(9.dp)
-            ) { LineIcon(Ic.CLOSE, C.Muted, 16.dp, 3f) }
+            ) { LineIcon(Ic.CLOSE, C.Muted, 14.dp, 2.4f) }
         }
     }
 }

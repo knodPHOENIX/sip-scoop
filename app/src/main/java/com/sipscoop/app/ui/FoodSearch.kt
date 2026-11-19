@@ -195,7 +195,7 @@ fun FoodSearchScreen(
                             .weight(1f)
                             .height(48.dp)
                             .background(C.Surface, RoundedCornerShape(14.dp))
-                            .border(2.dp, border, RoundedCornerShape(14.dp))
+                            .border(1.dp, border, RoundedCornerShape(14.dp))
                             .padding(horizontal = 12.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -418,7 +418,7 @@ private fun FoodRow(f: FoodItem, modifier: Modifier = Modifier, onClick: () -> U
             .fillMaxWidth()
             .graphicsLayer { scaleX = scale; scaleY = scale }
             .background(bg, RoundedCornerShape(16.dp))
-            .border(2.dp, C.Line, RoundedCornerShape(16.dp))
+            .border(1.dp, C.Line, RoundedCornerShape(16.dp))
             .clickable(interactionSource = interaction, indication = null, onClick = onClick)
             .padding(horizontal = 12.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,

@@ -138,7 +138,7 @@ fun AppIconPicker() {
                                 .offset(x = 4.dp, y = (-4).dp)
                                 .size(22.dp)
                                 .background(C.Blue, CircleShape)
-                                .border(2.dp, C.Surface, CircleShape),
+                                .border(1.dp, C.Surface, CircleShape),
                             contentAlignment = Alignment.Center
                         ) { LineIcon(Ic.CHECK, Color.White, 11.dp, 4f) }
                     }

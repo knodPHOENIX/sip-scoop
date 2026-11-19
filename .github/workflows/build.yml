@@ -26,13 +26,6 @@ jobs:
         with:
           gradle-version: '8.9'
 
-      - name: Download the rounded fonts (optional)
-        run: |
-          mkdir -p app/src/main/assets/fonts
-          curl -fsSL -o app/src/main/assets/fonts/baloo2.ttf "https://github.com/google/fonts/raw/main/ofl/baloo2/Baloo2%5Bwght%5D.ttf" || echo "Baloo 2 not downloaded, using the phone's font"
-          curl -fsSL -o app/src/main/assets/fonts/nunito.ttf "https://github.com/google/fonts/raw/main/ofl/nunito/Nunito%5Bwght%5D.ttf" || echo "Nunito not downloaded, using the phone's font"
-          ls -la app/src/main/assets/fonts
-
       - name: Build the APK
         run: gradle assembleRelease --no-daemon --stacktrace
 

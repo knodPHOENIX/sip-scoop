@@ -368,7 +368,7 @@ private fun ViewChoice(title: String, sub: String, selected: Boolean, preview: @
         Modifier
             .fillMaxWidth()
             .background(bg, RoundedCornerShape(20.dp))
-            .border(3.dp, edge, RoundedCornerShape(20.dp))
+            .border(1.dp, edge, RoundedCornerShape(20.dp))
             .clickable(onClick = onClick)
             .padding(14.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -387,7 +387,7 @@ private fun ViewChoice(title: String, sub: String, selected: Boolean, preview: @
         Box(
             Modifier
                 .size(24.dp)
-                .border(3.dp, if (selected) C.Blue else C.Line, CircleShape)
+                .border(1.dp, if (selected) C.Blue else C.Line, CircleShape)
                 .padding(5.dp)
                 .background(if (selected) C.Blue else Color.Transparent, CircleShape)
         )

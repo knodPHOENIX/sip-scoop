@@ -1,7 +1,7 @@
 package com.sipscoop.app.ui
 
 import android.content.Context
-import android.graphics.Typeface
+import com.sipscoop.app.R
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
@@ -11,6 +11,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
@@ -23,84 +24,85 @@ object ThemeState {
 private fun pick(light: Long, dark: Long): Color = Color(if (ThemeState.dark) dark else light)
 
 /**
- * Every colour in the app. Colours that change between light and dark mode are
- * getters, so screens redraw by themselves when the mode changes.
+ * Every colour in the app (professional look: calm neutrals, one clear colour per tracker).
+ * Colours that change between light and dark mode are getters, so screens redraw by
+ * themselves when the mode changes.
  */
 object C {
-    // same in both modes
-    val Blue = Color(0xFF1E9BF0)
-    val BlueDeep = Color(0xFF1683D0)
-    val Orange = Color(0xFFFF8A3D)
-    val Green = Color(0xFF58C443)
-    val Yellow = Color(0xFFFFC800)
-    val YellowDark = Color(0xFFE5A400)
+    // tracker colours: a little deeper in light mode, brighter on the dark background
+    val Blue: Color get() = pick(0xFF2F80ED, 0xFF4EA8FF)
+    val BlueDeep: Color get() = pick(0xFF1F6FD6, 0xFF3B92F0)
+    val Orange: Color get() = pick(0xFFF26B2C, 0xFFFF7A45)
+    val Green: Color get() = pick(0xFF2BB04F, 0xFF30D158)
+    val Yellow: Color get() = pick(0xFFE8A317, 0xFFF5B940)
+    val YellowDark: Color get() = pick(0xFFC98A0C, 0xFFD9A030)
     val Navy = Color(0xFF17324D)
     val Pink = Color(0xFFFFB3C1)
     val RedFace = Color(0xFFE5483B)
 
-    // change with the mode
-    val Bg: Color get() = pick(0xFFFFFFFF, 0xFF0F1923)
-    val Surface: Color get() = pick(0xFFFFFFFF, 0xFF17232F)
-    val Ink: Color get() = pick(0xFF22303E, 0xFFEAF2F8)
-    val Muted: Color get() = pick(0xFF5B6B7B, 0xFF9DB0C1)
-    val Line: Color get() = pick(0xFFD6E2EC, 0xFF2C3D4D)
-    val NavLine: Color get() = pick(0xFFE6EDF3, 0xFF22313F)
-    val Faint: Color get() = pick(0xFFF1F6FA, 0xFF1C2A37)
-    val Grey: Color get() = pick(0xFFE5EBF0, 0xFF26333F)
-    val GreyText: Color get() = pick(0xFF6B7A88, 0xFF8596A6)
+    // neutrals
+    val Bg: Color get() = pick(0xFFFFFFFF, 0xFF0B0D10)
+    val Surface: Color get() = pick(0xFFFFFFFF, 0xFF15181D)
+    val Ink: Color get() = pick(0xFF111418, 0xFFF2F4F7)
+    val Muted: Color get() = pick(0xFF6B7280, 0xFF8B93A1)
+    val Line: Color get() = pick(0xFFE3E6EA, 0xFF2A2F37)
+    val NavLine: Color get() = pick(0xFFEEF0F3, 0xFF1C2027)
+    val Faint: Color get() = pick(0xFFF4F5F7, 0xFF1A1D23)
+    val Grey: Color get() = pick(0xFFE9EBEE, 0xFF23272E)
+    val GreyText: Color get() = pick(0xFF7A818C, 0xFF6B7380)
 
-    val BlueEdge: Color get() = pick(0xFF1477BE, 0xFF0F6CAD)
-    val BlueDark: Color get() = pick(0xFF1477BE, 0xFF7CCBFA) // blue text
-    val BlueSoft: Color get() = pick(0xFFE3F4FE, 0xFF13324A)
-    val BlueCard: Color get() = pick(0xFFEAF6FE, 0xFF142B3E)
-    val BlueLight: Color get() = pick(0xFF8ED3FA, 0xFF3F8FC4)
-    val BlueLine: Color get() = pick(0xFFB9D3E6, 0xFF35546B)
-    val Glass: Color get() = pick(0xFFF1F8FD, 0xFF152536)
+    val BlueEdge: Color get() = pick(0xFF2A73D6, 0xFF3D95EC)
+    val BlueDark: Color get() = pick(0xFF1F6FD6, 0xFF6CB6FF) // blue text
+    val BlueSoft: Color get() = pick(0xFFEAF2FD, 0xFF0F1E2E)
+    val BlueCard: Color get() = pick(0xFFF5F8FD, 0xFF111820)
+    val BlueLight: Color get() = pick(0xFF8DBDF6, 0xFF2F6FA8)
+    val BlueLine: Color get() = pick(0xFFD2E2F8, 0xFF1D3A57)
+    val Glass: Color get() = pick(0xFFF5F8FC, 0xFF12171D)
 
-    val OrangeDark: Color get() = pick(0xFFD9681F, 0xFFB85512) // orange edge
-    val OrangeText: Color get() = pick(0xFFC85E15, 0xFFFFB27A)
-    val OrangeSoft: Color get() = pick(0xFFFFEEDF, 0xFF3A2618)
-    val OrangeCard: Color get() = pick(0xFFFFF6EE, 0xFF261A12)
-    val OrangeLine: Color get() = pick(0xFFEBD9CA, 0xFF4A3526)
-    val OrangeTrack: Color get() = pick(0xFFF3E2D3, 0xFF3A2A1E)
+    val OrangeDark: Color get() = pick(0xFFE05E22, 0xFFE5683A) // orange edge
+    val OrangeText: Color get() = pick(0xFFC2501C, 0xFFFF9A6E)
+    val OrangeSoft: Color get() = pick(0xFFFDEDE4, 0xFF2A1810)
+    val OrangeCard: Color get() = pick(0xFFFEF7F2, 0xFF19130F)
+    val OrangeLine: Color get() = pick(0xFFF3DCCD, 0xFF4A2A1C)
+    val OrangeTrack: Color get() = pick(0xFFF6E3D8, 0xFF2E1D16)
 
-    val GreenDark: Color get() = pick(0xFF46A332, 0xFF3E8F2C)
-    val GreenText: Color get() = pick(0xFF2F7A1E, 0xFF9BE58A)
-    val GreenSoft: Color get() = pick(0xFFE5F7DF, 0xFF1C361C)
+    val GreenDark: Color get() = pick(0xFF23963F, 0xFF28B04A)
+    val GreenText: Color get() = pick(0xFF1E7A35, 0xFF7EE09A)
+    val GreenSoft: Color get() = pick(0xFFE4F6E9, 0xFF12251A)
 
-    val YellowSoft: Color get() = pick(0xFFFFF6D6, 0xFF30270C)
-    val YellowLine: Color get() = pick(0xFFFFE48A, 0xFF5E4A12)
-    val YellowText: Color get() = pick(0xFF7A5300, 0xFFFFD95A)
+    val YellowSoft: Color get() = pick(0xFFFDF4DF, 0xFF1E1A10)
+    val YellowLine: Color get() = pick(0xFFF0DDB0, 0xFF3A3016)
+    val YellowText: Color get() = pick(0xFF8A5D00, 0xFFF5B940)
 
-    val Red: Color get() = pick(0xFFC2362B, 0xFFFF7A6E)
-    val RedSoft: Color get() = pick(0xFFFDECEA, 0xFF3A1C1A)
-    val RedLine: Color get() = pick(0xFFF0CFCB, 0xFF5A2A26)
-    val RedEdge: Color get() = pick(0xFFB0301F, 0xFF9E2A1D)
-    val PinkSoft: Color get() = pick(0xFFFCE8F1, 0xFF3A1E2D)
+    val Red: Color get() = pick(0xFFC93A30, 0xFFFF6B60)
+    val RedSoft: Color get() = pick(0xFFFCECEA, 0xFF2A1414)
+    val RedLine: Color get() = pick(0xFFF1CFCB, 0xFF4A2420)
+    val RedEdge: Color get() = pick(0xFFB03228, 0xFFC9443A)
+    val PinkSoft: Color get() = pick(0xFFFCE8F1, 0xFF2A1620)
     val PinkText: Color get() = pick(0xFFB8327A, 0xFFFF9BC8)
 
-    // Steps: light golden yellow
-    val Gold = Color(0xFFF5B700)
-    val GoldEdge: Color get() = pick(0xFFC99300, 0xFFA37700)
-    val GoldText: Color get() = pick(0xFF8A6100, 0xFFFFD666)
-    val GoldSoft: Color get() = pick(0xFFFFF4CC, 0xFF33290A)
-    val GoldCard: Color get() = pick(0xFFFFF9E6, 0xFF241E0C)
-    val GoldLine: Color get() = pick(0xFFF0DFA8, 0xFF55451A)
-    val GoldTrack: Color get() = pick(0xFFFBEFC6, 0xFF2E2710)
-    val GoldIdle: Color get() = pick(0xFFF3E6BE, 0xFF3A3218)
-    val GoldHit = Color(0xFFF5C83A)
+    // Steps: gold
+    val Gold: Color get() = pick(0xFFE8A317, 0xFFF5B940)
+    val GoldEdge: Color get() = pick(0xFFD49412, 0xFFD9A030)
+    val GoldText: Color get() = pick(0xFF8A5D00, 0xFFF5B940)
+    val GoldSoft: Color get() = pick(0xFFFDF4DF, 0xFF1E1A10)
+    val GoldCard: Color get() = pick(0xFFFEFAF0, 0xFF17150F)
+    val GoldLine: Color get() = pick(0xFFF0DFB3, 0xFF3A3016)
+    val GoldTrack: Color get() = pick(0xFFF7EED6, 0xFF2A2416)
+    val GoldIdle: Color get() = pick(0xFFF1E6C8, 0xFF3A3220)
+    val GoldHit: Color get() = pick(0xFFF0B83A, 0xFFF5C452)
 
-    val BlueStreakLine: Color get() = pick(0xFFB5DDF8, 0xFF1F4F73)
+    val BlueStreakLine: Color get() = pick(0xFFD2E2F8, 0xFF1D3A57)
 
     /** Any light/dark colour pair. */
     fun pickColor(light: Long, dark: Long): Color = pick(light, dark)
 
-    /** Soft page tint behind the rings view, one per tracker. */
-    val TintSteps: Color get() = pick(0xFFFFFBEB, 0xFF15140C)
-    val TintWater: Color get() = pick(0xFFF2F9FE, 0xFF0E1A26)
-    val TintProtein: Color get() = pick(0xFFFFF7F0, 0xFF17130F)
-    val RingTrackWater: Color get() = pick(0xFFD6ECFB, 0xFF14304A)
-    val RingTrackProtein: Color get() = pick(0xFFF9E1CC, 0xFF3A2618)
+    /** Page tint behind the rings view, one per tracker. */
+    val TintSteps: Color get() = pick(0xFFFFFCF5, 0xFF0B0D10)
+    val TintWater: Color get() = pick(0xFFF7FAFE, 0xFF0B0D10)
+    val TintProtein: Color get() = pick(0xFFFFF9F5, 0xFF0B0D10)
+    val RingTrackWater: Color get() = pick(0xFFEAF2FD, 0xFF14273A)
+    val RingTrackProtein: Color get() = pick(0xFFFBE7DC, 0xFF2E1D16)
 }
 
 /** Colours for one tracker (water or protein). */
@@ -118,56 +120,47 @@ val ProteinAccent: Accent get() = Accent(C.Orange, C.OrangeDark, C.OrangeText, C
 val StepAccent: Accent get() = Accent(C.Gold, C.GoldEdge, C.GoldText, C.GoldSoft, C.GoldCard, C.GoldLine)
 
 /**
- * Rounded fonts (Baloo 2 for headings, Nunito for text) are downloaded into
- * assets/fonts during the GitHub build. If they are missing, the phone's own font is used.
+ * Inter, a clean grotesk close to Apple's San Francisco. It is bundled in res/font
+ * (free under the SIL Open Font License, see assets/licenses).
  */
 object Fonts {
-    var display: FontFamily = FontFamily.SansSerif
-        private set
-    var body: FontFamily = FontFamily.SansSerif
-        private set
-    var bodyBold: FontFamily = FontFamily.SansSerif
-        private set
-    private var loaded = false
+    val family: FontFamily = FontFamily(
+        Font(R.font.inter_regular, FontWeight.Normal),
+        Font(R.font.inter_medium, FontWeight.Medium),
+        Font(R.font.inter_semibold, FontWeight.SemiBold),
+        Font(R.font.inter_bold, FontWeight.Bold)
+    )
+    val display: FontFamily get() = family
+    val body: FontFamily get() = family
+    val bodyBold: FontFamily get() = family
 
-    fun init(context: Context) {
-        if (loaded) return
-        loaded = true
-        val files = runCatching { context.assets.list("fonts")?.toList() }.getOrNull().orEmpty()
-        fun make(file: String, weight: Int): FontFamily? {
-            if (file !in files) return null
-            return runCatching {
-                val tf: Typeface = Typeface.Builder(context.assets, "fonts/$file")
-                    .setFontVariationSettings("'wght' $weight")
-                    .build()
-                FontFamily(tf)
-            }.getOrNull()
-        }
-        make("baloo2.ttf", 800)?.let { display = it }
-        make("nunito.ttf", 700)?.let { body = it }
-        make("nunito.ttf", 800)?.let { bodyBold = it }
-    }
+    /** Kept so MainActivity's start-up call still works; nothing to load any more. */
+    @Suppress("UNUSED_PARAMETER")
+    fun init(context: Context) {}
 }
 
 object T {
+    /** Big numbers and titles: bold with slightly tight letters. */
     fun display(size: Int, color: Color = C.Ink) = TextStyle(
-        fontFamily = Fonts.display, fontWeight = FontWeight.ExtraBold, fontSize = size.sp, color = color,
-        lineHeight = (size * 1.15f).sp
+        fontFamily = Fonts.family, fontWeight = FontWeight.Bold, fontSize = size.sp, color = color,
+        letterSpacing = (size * -0.025f).sp, lineHeight = (size * 1.2f).sp,
+        fontFeatureSettings = "tnum"
     )
 
     fun body(size: Int, color: Color = C.Ink) = TextStyle(
-        fontFamily = Fonts.body, fontWeight = FontWeight.Bold, fontSize = size.sp, color = color,
-        lineHeight = (size * 1.35f).sp
+        fontFamily = Fonts.family, fontWeight = FontWeight.Medium, fontSize = size.sp, color = color,
+        lineHeight = (size * 1.4f).sp
     )
 
     fun bold(size: Int, color: Color = C.Ink) = TextStyle(
-        fontFamily = Fonts.bodyBold, fontWeight = FontWeight.ExtraBold, fontSize = size.sp, color = color,
-        lineHeight = (size * 1.3f).sp
+        fontFamily = Fonts.family, fontWeight = FontWeight.SemiBold, fontSize = size.sp, color = color,
+        lineHeight = (size * 1.3f).sp, fontFeatureSettings = "tnum"
     )
 
+    /** Small uppercase section labels. */
     fun label(color: Color = C.Muted) = TextStyle(
-        fontFamily = Fonts.bodyBold, fontWeight = FontWeight.ExtraBold, fontSize = 13.sp, color = color,
-        letterSpacing = 1.2.sp
+        fontFamily = Fonts.family, fontWeight = FontWeight.SemiBold, fontSize = 12.sp, color = color,
+        letterSpacing = 1.sp
     )
 }
 

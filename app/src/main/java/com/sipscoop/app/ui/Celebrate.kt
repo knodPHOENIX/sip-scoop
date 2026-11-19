@@ -192,7 +192,7 @@ fun CelebrationLayer(state: AppState) {
                 Modifier
                     .fillMaxWidth()
                     .background(C.Surface, RoundedCornerShape(20.dp))
-                    .border(2.dp, C.Green.copy(alpha = 0.6f), RoundedCornerShape(20.dp))
+                    .border(1.dp, C.Green.copy(alpha = 0.6f), RoundedCornerShape(20.dp))
                     .padding(horizontal = 14.dp, vertical = 12.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -262,7 +262,7 @@ fun CelebrationLayer(state: AppState) {
                 Row(
                     Modifier
                         .background(C.BlueSoft, CircleShape)
-                        .border(2.dp, C.BlueStreakLine, CircleShape)
+                        .border(1.dp, C.BlueStreakLine, CircleShape)
                         .padding(horizontal = 12.dp, vertical = 6.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(6.dp)
