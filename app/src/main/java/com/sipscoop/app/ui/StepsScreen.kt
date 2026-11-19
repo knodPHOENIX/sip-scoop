@@ -153,7 +153,18 @@ private fun StepsToday(state: AppState, update: ((AppState) -> AppState) -> Unit
             horizontalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             Box(Modifier.padding(top = if (compact) 0.dp else 14.dp)) {
-                StrideMascot(Modifier.size(if (compact) 56.dp else 66.dp, if (compact) 43.dp else 51.dp), celebrate = fraction >= 1f)
+                if (compact) {
+                    // Rings view: a calm gold shoe badge instead of the mascot.
+                    Box(
+                        Modifier
+                            .size(44.dp)
+                            .background(C.GoldSoft, CircleShape)
+                            .border(1.dp, C.GoldLine, CircleShape),
+                        contentAlignment = Alignment.Center
+                    ) { ShoeIcon(24.dp) }
+                } else {
+                    StrideMascot(Modifier.size(66.dp, 51.dp), celebrate = fraction >= 1f)
+                }
             }
             AnimatedContent(
                 targetState = msg,
@@ -176,11 +187,8 @@ private fun StepsToday(state: AppState, update: ((AppState) -> AppState) -> Unit
         }
 
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            Box(Modifier.size(8.dp).background(Color(0xFF34C759), CircleShape))
-            Spacer(Modifier.size(6.dp))
-            Text("Counting on its own", style = T.bold(13, C.Muted))
+            Spacer(Modifier.weight(1f))
             if (compact) {
-                Spacer(Modifier.weight(1f))
                 Pill("Goal ${fmt(goal)} · edit", StepAccent) { showGoal = true }
             } else {
                 SwipeHint("Swipe for water", Arrangement.End)
@@ -417,7 +425,7 @@ private fun ActivityChart(state: AppState, hours: IntArray, back: Int, day: Loca
                 Legend(C.GoldIdle, "Light moving")
             }
         } else {
-            WeekBars(state, Track.STEPS, "Last 7 days", Modifier.fillMaxWidth().height(170.dp))
+            WeekBars(state, Track.STEPS, "Last 7 days", Modifier.fillMaxWidth().height(220.dp), showNumbers = true)
         }
     }
 }

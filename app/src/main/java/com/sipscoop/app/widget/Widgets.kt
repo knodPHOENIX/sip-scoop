@@ -6,6 +6,11 @@ import android.appwidget.AppWidgetProvider
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.content.res.Configuration
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.Paint
+import android.graphics.RectF
 import android.view.View
 import android.widget.RemoteViews
 import com.sipscoop.app.MainActivity
@@ -71,39 +76,41 @@ object WidgetSync {
 
     fun build(context: Context, layout: Int, cls: Class<*>, s: AppState): RemoteViews {
         val views = RemoteViews(context.packageName, layout)
+        val wide = layout == R.layout.widget_wide
         val waterStep = s.waterQuick.firstOrNull() ?: 250
         val proteinStep = s.proteinQuick.firstOrNull() ?: 10
-        val waterPct = if (s.waterGoal > 0) minOf(100, s.waterTotal * 100 / s.waterGoal) else 0
-        val proteinPct = if (s.proteinGoal > 0) minOf(100, s.proteinTotal * 100 / s.proteinGoal) else 0
+        val stepPct = pct(s.steps, s.stepGoal)
+        val waterPct = pct(s.waterTotal, s.waterGoal)
+        val proteinPct = pct(s.proteinTotal, s.proteinGoal)
 
-        if (layout == R.layout.widget_wide) {
-            views.setTextViewText(R.id.water_value, fmt(s.waterTotal))
-            views.setTextViewText(R.id.water_goal, "/ ${fmt(s.waterGoal)} ml")
-            views.setTextViewText(R.id.protein_value, "${s.proteinTotal}")
-            views.setTextViewText(R.id.protein_goal, "/ ${s.proteinGoal} g")
-            views.setProgressBar(R.id.water_bar, 100, waterPct, false)
-            views.setProgressBar(R.id.protein_bar, 100, proteinPct, false)
-            views.setTextViewText(R.id.water_add, "+$waterStep ml")
-            views.setTextViewText(R.id.protein_add, "+$proteinStep g")
-            views.setTextViewText(
-                R.id.steps_line,
-                if (s.stepsMet) "Steps ${fmt(s.steps)} · goal done!" else "Steps ${fmt(s.steps)} / ${fmt(s.stepGoal)}"
-            )
-        } else {
-            views.setTextViewText(R.id.water_value, liters(s.waterTotal))
-            views.setTextViewText(R.id.protein_value, "${s.proteinTotal} g")
-            views.setTextViewText(R.id.water_add, "+$waterStep")
-            views.setTextViewText(R.id.protein_add, "+$proteinStep g")
-        }
+        // One row each for steps, water and protein.
+        views.setTextViewText(R.id.steps_value, fmt(s.steps))
+        views.setTextViewText(R.id.steps_goal, if (wide) "/ ${fmt(s.stepGoal)}" else "steps")
+        views.setProgressBar(R.id.steps_bar, 100, stepPct, false)
+        views.setTextViewText(R.id.water_value, litersNumber(s.waterTotal))
+        views.setTextViewText(R.id.water_goal, "/ ${liters(s.waterGoal)}")
+        views.setProgressBar(R.id.water_bar, 100, waterPct, false)
+        views.setTextViewText(R.id.protein_value, "${s.proteinTotal}")
+        views.setTextViewText(R.id.protein_goal, "/ ${s.proteinGoal} g")
+        views.setProgressBar(R.id.protein_bar, 100, proteinPct, false)
+        views.setTextViewText(R.id.water_add, if (wide) "+$waterStep ml" else "+$waterStep")
+        views.setTextViewText(R.id.protein_add, "+$proteinStep g")
 
-        // Both goals hit: swap the buttons for a little celebration.
+        // Both diet goals hit: swap the buttons for a done message.
         val done = s.onboarded && s.todayMet
         views.setViewVisibility(R.id.normal_group, if (done) View.GONE else View.VISIBLE)
         views.setViewVisibility(R.id.done_group, if (done) View.VISIBLE else View.GONE)
-        if (layout == R.layout.widget_wide) {
-            views.setTextViewText(R.id.done_totals, "${liters(s.waterTotal)} water · ${s.proteinTotal} g protein · ${fmt(s.steps)} steps")
-            val streak = s.streak
-            views.setTextViewText(R.id.done_streak, "$streak-day diet streak")
+        views.setTextViewText(R.id.done_streak, "${s.streak}-day diet streak")
+        if (wide) {
+            views.setTextViewText(R.id.done_totals, "${liters(s.waterTotal)} water · ${s.proteinTotal} g protein\n${fmt(s.steps)} steps")
+        }
+
+        // The rings are drawn as a picture, in the phone's light or dark colours.
+        val ringSize = if (wide) 84 else 64
+        val fractions = floatArrayOf(stepPct / 100f, waterPct / 100f, proteinPct / 100f)
+        runCatching {
+            if (wide) views.setImageViewBitmap(R.id.rings, ringsBitmap(context, ringSize, fractions))
+            if (done) views.setImageViewBitmap(R.id.done_rings, ringsBitmap(context, ringSize, floatArrayOf(1f, 1f, 1f)))
         }
 
         views.setOnClickPendingIntent(R.id.water_add, broadcast(context, cls, ACTION_ADD_WATER, 1))
@@ -116,6 +123,42 @@ object WidgetSync {
         )
         views.setOnClickPendingIntent(R.id.widget_root, open)
         return views
+    }
+
+    private fun pct(value: Int, goal: Int) = if (goal > 0) minOf(100, (value.toLong() * 100 / goal).toInt()) else 0
+
+    /** "1.75" for 1,750 ml (the unit is shown next to the goal). */
+    private fun litersNumber(ml: Int): String = liters(ml).removeSuffix(" L")
+
+    /** Three rounded rings (steps, water, protein) drawn into a small picture. */
+    private fun ringsBitmap(context: Context, sizeDp: Int, f: FloatArray): Bitmap {
+        val density = context.resources.displayMetrics.density
+        val px = (sizeDp * density).toInt().coerceAtLeast(1)
+        val bmp = Bitmap.createBitmap(px, px, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(bmp)
+        val dark = (context.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES
+        val colors = if (dark) intArrayOf(0xFFF5B940.toInt(), 0xFF4EA8FF.toInt(), 0xFFFF7A45.toInt())
+        else intArrayOf(0xFFD9940E.toInt(), 0xFF2F80ED.toInt(), 0xFFEF6428.toInt())
+        val track = if (dark) 0x1FFFFFFF else 0x140F1318
+        val stroke = px * 0.09f
+        val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            style = Paint.Style.STROKE
+            strokeWidth = stroke
+            strokeCap = Paint.Cap.ROUND
+        }
+        val c = px / 2f
+        listOf(0.44f, 0.33f, 0.22f).forEachIndexed { i, r ->
+            val rad = px * r
+            val box = RectF(c - rad, c - rad, c + rad, c + rad)
+            paint.color = track
+            canvas.drawArc(box, 0f, 360f, false, paint)
+            val sweep = 360f * f[i].coerceIn(0f, 1f)
+            if (sweep > 0.5f) {
+                paint.color = colors[i]
+                canvas.drawArc(box, -90f, sweep, false, paint)
+            }
+        }
+        return bmp
     }
 
     private fun broadcast(context: Context, cls: Class<*>, action: String, code: Int): PendingIntent {

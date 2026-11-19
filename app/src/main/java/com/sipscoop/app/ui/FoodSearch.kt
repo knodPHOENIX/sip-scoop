@@ -180,7 +180,7 @@ fun FoodSearchScreen(
 
     val border by animateColorAsState(if (focused) C.Orange else C.Line, tween(200), label = "searchBorder")
 
-    Box(Modifier.fillMaxSize().background(C.Bg)) {
+    Box(Modifier.fillMaxSize().pageBackground()) {
         Column(Modifier.fillMaxSize()) {
             Column(
                 Modifier.padding(start = 20.dp, end = 20.dp, top = 18.dp, bottom = 8.dp),
@@ -479,7 +479,7 @@ private fun FoodSheet(
         Modifier
             .fillMaxWidth()
             .heightIn(max = 640.dp)
-            .background(C.Surface, RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp))
+            .background(C.Sheet, RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp))
             .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { }
             .verticalScroll(rememberScrollState())
             .padding(start = 20.dp, end = 20.dp, top = 12.dp, bottom = 24.dp),

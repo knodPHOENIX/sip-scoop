@@ -3,7 +3,7 @@
     android:description="@string/widget_compact_desc"
     android:initialLayout="@layout/widget_compact"
     android:minWidth="110dp"
-    android:minHeight="110dp"
+    android:minHeight="140dp"
     android:previewLayout="@layout/widget_compact"
     android:resizeMode="horizontal|vertical"
     android:targetCellWidth="2"

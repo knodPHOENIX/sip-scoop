@@ -79,6 +79,8 @@ class MainActivity : ComponentActivity() {
         applyTheme(appState)
         stepStatus = StepSensor.status(this)
         startSteps()
+        // Shows or hides the steps notification if a permission or setting changed meanwhile.
+        com.sipscoop.app.notify.StepNotification.update(this, appState, force = true)
     }
 
     override fun onPause() {
@@ -154,6 +156,7 @@ class MainActivity : ComponentActivity() {
         }
         if (next == before) return
         appState = next
+        com.sipscoop.app.notify.StepNotification.update(this, next)
         // Saving on every step is wasteful; save every few seconds, or right away when the goal is hit.
         val now = System.currentTimeMillis()
         if (now - lastStepSave > 5000 || (next.stepsMet && !before.stepsMet)) {
@@ -198,6 +201,7 @@ class MainActivity : ComponentActivity() {
         applyTheme(next)
         WidgetSync.refreshAll(this)
         Reminders.schedule(this, next)
+        com.sipscoop.app.notify.StepNotification.update(this, next, force = next.stepNotify != before.stepNotify)
         if (next.onboarded && !before.onboarded) askForNotifications()
     }
 

@@ -71,7 +71,9 @@ data class AppState(
     val stepLast: Long = -1,
     val remindSteps: Boolean = true,
     /** Tracker view: false = Classic (glass, bar, ring), true = Rings (one set of rings for all three). */
-    val ringsView: Boolean = false
+    val ringsView: Boolean = false,
+    /** A thin, silent notification with today's steps. */
+    val stepNotify: Boolean = true
 ) {
     val waterTotal: Int get() = water.sumOf { it.amount }
     val proteinTotal: Int get() = protein.sumOf { it.amount }
@@ -418,6 +420,7 @@ object Store {
             .put("stepLast", s.stepLast)
             .put("remindSteps", s.remindSteps)
             .put("ringsView", s.ringsView)
+            .put("stepNotify", s.stepNotify)
     }
 
     private fun fromJson(o: JSONObject): AppState {
@@ -476,7 +479,8 @@ object Store {
             stepPrior = o.optInt("stepPrior", 0),
             stepLast = o.optLong("stepLast", -1),
             remindSteps = o.optBoolean("remindSteps", def.remindSteps),
-            ringsView = o.optBoolean("ringsView", def.ringsView)
+            ringsView = o.optBoolean("ringsView", def.ringsView),
+            stepNotify = o.optBoolean("stepNotify", def.stepNotify)
         )
     }
 }

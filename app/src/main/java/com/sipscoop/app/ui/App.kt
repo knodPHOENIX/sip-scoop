@@ -88,7 +88,7 @@ fun AppRoot(
     ) { s ->
         when (s) {
             0 -> Splash { splashDone = true }
-            1 -> Box(Modifier.fillMaxSize().background(C.Bg).windowInsetsPadding(WindowInsets.safeDrawing)) {
+            1 -> Box(Modifier.fillMaxSize().pageBackground().windowInsetsPadding(WindowInsets.safeDrawing)) {
                 Onboarding(state) { name, age, avatar, water, protein, rings ->
                     update {
                         it.copy(
@@ -140,7 +140,7 @@ fun MainScreen(
     Box(
         Modifier
             .fillMaxSize()
-            .background(C.Bg)
+            .pageBackground()
             .windowInsetsPadding(WindowInsets.safeDrawing)
     ) {
         AnimatedContent(
@@ -174,8 +174,7 @@ fun MainScreen(
                 else -> {
                     val pos = pager.currentPage + pager.currentPageOffsetFraction
                     val rings = state.ringsView
-                    val bg = if (rings) ringsTint(pos) else C.Bg
-                    Column(Modifier.fillMaxSize().background(bg)) {
+                    Column(Modifier.fillMaxSize()) {
                     // Fixed top: greeting, streaks and profile stay put while the pages slide.
                     Box(Modifier.padding(start = 20.dp, end = 20.dp, top = 14.dp, bottom = 4.dp)) {
                         GreetingHeader(
@@ -243,7 +242,7 @@ fun MainScreen(
             Row(
                 Modifier
                     .fillMaxWidth()
-                    .background(C.Surface, RoundedCornerShape(16.dp))
+                    .background(C.Sheet, RoundedCornerShape(16.dp))
                     .border(1.dp, C.Green.copy(alpha = 0.55f), RoundedCornerShape(16.dp))
                     .padding(horizontal = 14.dp, vertical = 12.dp),
                 verticalAlignment = Alignment.CenterVertically,

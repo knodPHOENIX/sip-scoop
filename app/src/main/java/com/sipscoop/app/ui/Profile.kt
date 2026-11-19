@@ -250,7 +250,7 @@ fun ProfileScreen(
     var showShare by remember { mutableStateOf(false) }
     var showLogout by remember { mutableStateOf(false) }
 
-    Column(Modifier.fillMaxSize().background(C.Bg)) {
+    Column(Modifier.fillMaxSize().pageBackground()) {
         Column(
             Modifier
                 .weight(1f)
@@ -446,11 +446,11 @@ private fun themeLabel(mode: String) = when (mode) {
 }
 
 private fun notifySummary(s: AppState): String {
-    val on = listOf(s.remindWater, s.remindProtein, s.streakAlert, s.remindSteps).count { it }
+    val on = listOf(s.remindWater, s.remindProtein, s.streakAlert, s.remindSteps, s.stepNotify).count { it }
     return when (on) {
         0 -> "All off"
-        4 -> "All on"
-        else -> "$on of 4 on"
+        5 -> "All on"
+        else -> "$on of 5 on"
     }
 }
 
@@ -465,7 +465,7 @@ fun AppearanceScreen(
     Column(
         Modifier
             .fillMaxSize()
-            .background(C.Bg)
+            .pageBackground()
             .verticalScroll(rememberScrollState())
             .padding(horizontal = 20.dp, vertical = 18.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
@@ -684,7 +684,7 @@ fun NotificationsScreen(
     Column(
         Modifier
             .fillMaxSize()
-            .background(C.Bg)
+            .pageBackground()
             .verticalScroll(rememberScrollState())
             .padding(horizontal = 20.dp, vertical = 18.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
@@ -751,10 +751,18 @@ fun NotificationsScreen(
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             SectionLabel("Steps")
             Card {
-                SettingRow("Step reminder", "At 19:00 if you're short of your step goal") {
+                SettingRow("Step reminder", "At 19:00 if you're short of your step goal", showDivider = true) {
                     Toggle(state.remindSteps, "Step reminder") { on -> setNotify({ it.copy(remindSteps = on) }, on) }
                 }
+                SettingRow("Steps in notification bar", "A thin, silent bar with today's steps") {
+                    Toggle(state.stepNotify, "Steps in notification bar") { on -> setNotify({ it.copy(stepNotify = on) }, on) }
+                }
             }
+            Text(
+                "Shown quietly in the notification shade, with no sound or pop-up. It updates whenever the app checks your steps, about every 15 minutes.",
+                style = T.body(12, C.Muted),
+                modifier = Modifier.padding(horizontal = 6.dp)
+            )
         }
     }
 }
@@ -819,7 +827,7 @@ fun BugDialog(onClose: () -> Unit) {
 
 @Composable
 private fun Divider() {
-    Box(Modifier.fillMaxWidth().height(2.dp).background(C.NavLine))
+    Box(Modifier.fillMaxWidth().height(1.dp).background(C.NavLine))
 }
 
 @Composable
@@ -884,7 +892,7 @@ fun HistoryScreen(state: AppState, onBack: () -> Unit) {
     Column(
         Modifier
             .fillMaxSize()
-            .background(C.Bg)
+            .pageBackground()
             .verticalScroll(rememberScrollState())
             .padding(horizontal = 20.dp, vertical = 18.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)

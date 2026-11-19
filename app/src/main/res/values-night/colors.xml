@@ -17,4 +17,18 @@
     <color name="widget_done_line">#2E5A28</color>
     <color name="widget_streak_bg">#30270C</color>
     <color name="gold_text">#FFD666</color>
+
+    <!-- 2.0 glass widgets -->
+    <color name="widget_glass_top">#B8282C34</color>
+    <color name="widget_glass_bottom">#A8121418</color>
+    <color name="widget_glass_edge">#24FFFFFF</color>
+    <color name="widget_ink">#F2F4F7</color>
+    <color name="widget_muted">#9EEBF0F7</color>
+    <color name="widget_faint">#66EBF0F7</color>
+    <color name="widget_gold">#F5B940</color>
+    <color name="widget_blue">#4EA8FF</color>
+    <color name="widget_orange">#FF7A45</color>
+    <color name="widget_track">#1FFFFFFF</color>
+    <color name="widget_streak_fill">#224EA8FF</color>
+    <color name="widget_streak_edge">#554EA8FF</color>
 </resources>

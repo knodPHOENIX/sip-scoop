@@ -19,4 +19,18 @@
     <color name="widget_done_line">#BFE8B4</color>
     <color name="widget_streak_bg">#FFF6D6</color>
     <color name="gold_text">#8A6100</color>
+
+    <!-- 2.0 glass widgets -->
+    <color name="widget_glass_top">#D9FFFFFF</color>
+    <color name="widget_glass_bottom">#A6FFFFFF</color>
+    <color name="widget_glass_edge">#E6FFFFFF</color>
+    <color name="widget_ink">#0F1318</color>
+    <color name="widget_muted">#940F1318</color>
+    <color name="widget_faint">#660F1318</color>
+    <color name="widget_gold">#D9940E</color>
+    <color name="widget_blue">#2F80ED</color>
+    <color name="widget_orange">#EF6428</color>
+    <color name="widget_track">#140F1318</color>
+    <color name="widget_streak_fill">#1A2F80ED</color>
+    <color name="widget_streak_edge">#552F80ED</color>
 </resources>

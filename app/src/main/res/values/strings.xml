@@ -3,11 +3,11 @@
     <string name="app_name">Sip &amp; Scoop</string>
     <string name="widget_wide_name">Sip &amp; Scoop · wide</string>
     <string name="widget_compact_name">Sip &amp; Scoop · compact</string>
-    <string name="widget_wide_desc">Log water and protein with one tap</string>
-    <string name="widget_compact_desc">Small one-tap logger</string>
+    <string name="widget_wide_desc">Steps, water and protein, with one-tap logging</string>
+    <string name="widget_compact_desc">Steps, water and protein at a glance</string>
     <string name="water">Water</string>
     <string name="protein">Protein</string>
-    <string name="widget_done_title">Today\'s goals are complete!</string>
-    <string name="widget_done_short">Goals done today!</string>
+    <string name="widget_done_title">All goals done today</string>
+    <string name="widget_done_short">All done today</string>
     <string name="widget_done_sub">See you tomorrow</string>
 </resources>

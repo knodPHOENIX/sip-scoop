@@ -292,29 +292,21 @@ fun GreetingHeader(
     onProfile: () -> Unit
 ) {
     val (text, _) = greeting()
-    val date = remember {
-        java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("EEE d MMM", java.util.Locale.getDefault()))
-    }
     Row(
         modifier = Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.Top,
-        horizontalArrangement = Arrangement.spacedBy(10.dp)
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            Text(date.uppercase(), style = T.label())
-            Text("$text, $name", style = T.display(22), maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
-            Row(
-                Modifier.padding(top = 6.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                StreakBadge(stepStreak, steps = true, onClick = onStepStreak)
-                StreakBadge(dietStreak, steps = false, onClick = onDietStreak)
-            }
+        Column(Modifier.weight(1f)) {
+            Text("$text,", style = T.body(14, C.Muted), maxLines = 1)
+            Text(name, style = T.display(24), maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
         }
+        StreakBadge(stepStreak, steps = true, onClick = onStepStreak)
+        StreakBadge(dietStreak, steps = false, onClick = onDietStreak)
         SquishButton(
             onClick = onProfile,
-            background = C.Faint,
+            background = C.Surface,
+            modifier = Modifier.padding(start = 4.dp),
             shape = RoundedCornerShape(50),
             borderColor = C.Line,
             contentPadding = PaddingValues(1.dp)
@@ -464,14 +456,15 @@ fun Popup(
     content: @Composable ColumnScope.() -> Unit
 ) {
     Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
+        GlassBlurBehind()
         Box(
             Modifier
                 .padding(horizontal = 22.dp, vertical = 24.dp)
                 .widthIn(max = 420.dp)
                 .fillMaxWidth()
                 .wrapContentHeight()
-                .background(C.Surface, RoundedCornerShape(22.dp))
-                .border(1.dp, C.Line, RoundedCornerShape(22.dp))
+                .background(C.Sheet, RoundedCornerShape(24.dp))
+                .border(1.dp, C.Line, RoundedCornerShape(24.dp))
         ) {
             Column(
                 Modifier
@@ -490,6 +483,26 @@ fun Popup(
                     .padding(top = 12.dp, end = 12.dp),
                 contentPadding = PaddingValues(9.dp)
             ) { LineIcon(Ic.CLOSE, C.Muted, 14.dp, 2.4f) }
+        }
+    }
+}
+
+/**
+ * Frosts whatever is behind a pop-up (Android 12 and newer). Older phones simply show the
+ * pop-up's own glass colour. Call it first thing inside a Dialog.
+ */
+@Composable
+fun GlassBlurBehind(radius: Int = 48) {
+    val view = androidx.compose.ui.platform.LocalView.current
+    androidx.compose.runtime.SideEffect {
+        val window = (view.parent as? androidx.compose.ui.window.DialogWindowProvider)?.window
+        if (window != null && android.os.Build.VERSION.SDK_INT >= 31) {
+            runCatching {
+                window.addFlags(android.view.WindowManager.LayoutParams.FLAG_BLUR_BEHIND)
+                val attrs = window.attributes
+                attrs.blurBehindRadius = radius
+                window.attributes = attrs
+            }
         }
     }
 }

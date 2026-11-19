@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -35,9 +36,9 @@ enum class Track { STEPS, WATER, PROTEIN }
 class BarColors(val today: Color, val hit: Color, val idle: Color, val todayText: Color)
 
 fun barColors(track: Track): BarColors = when (track) {
-    Track.STEPS -> BarColors(C.Gold, C.GoldHit, C.GoldIdle, C.GoldText)
-    Track.WATER -> BarColors(C.Blue, C.pickColor(0xFF5BB8F5, 0xFF3E9BD8), C.pickColor(0xFFD6ECFB, 0xFF14304A), C.BlueDark)
-    Track.PROTEIN -> BarColors(C.Orange, C.pickColor(0xFFFFA466, 0xFFE07A35), C.pickColor(0xFFF9E1CC, 0xFF3A2618), C.OrangeText)
+    Track.STEPS -> BarColors(C.Gold, C.Gold.copy(alpha = 0.55f), C.Grey, C.GoldText)
+    Track.WATER -> BarColors(C.Blue, C.Blue.copy(alpha = 0.55f), C.Grey, C.BlueDark)
+    Track.PROTEIN -> BarColors(C.Orange, C.Orange.copy(alpha = 0.55f), C.Grey, C.OrangeText)
 }
 
 /** Today's amount and goal for a tracker. */
@@ -55,7 +56,7 @@ fun AppState.goalOf(track: Track): Int = when (track) {
 
 /** Last 7 days of one tracker, oldest first, with today last. */
 @Composable
-fun WeekBars(state: AppState, track: Track, title: String, modifier: Modifier) {
+fun WeekBars(state: AppState, track: Track, title: String, modifier: Modifier, showNumbers: Boolean = false) {
     val today = runCatching { LocalDate.parse(state.date) }.getOrElse { LocalDate.now() }
     val days = (6 downTo 0).map { today.minusDays(it.toLong()) }
     val values = days.map { d ->
@@ -110,21 +111,53 @@ fun WeekBars(state: AppState, track: Track, title: String, modifier: Modifier) {
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
-                    Box(Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.BottomCenter) {
-                        val f = (values[i].toFloat() / top).coerceIn(0.04f, 1f) * grow
-                        Box(
-                            Modifier
-                                .widthIn(max = 24.dp)
-                                .fillMaxWidth()
-                                .fillMaxHeight(f)
-                                .background(color, RoundedCornerShape(7.dp))
-                        )
+                    val f = (values[i].toFloat() / top).coerceIn(0.04f, 1f) * grow
+                    if (showNumbers) {
+                        // The day's number sits just above its bar.
+                        Column(
+                            Modifier.fillMaxWidth().weight(1f),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(3.dp, Alignment.Bottom)
+                        ) {
+                            Text(
+                                if (values[i] > 0) fmt(values[i]) else "–",
+                                style = T.bold(10, if (isToday) colors.todayText else if (hit) C.Ink else C.Muted),
+                                maxLines = 1, softWrap = false
+                            )
+                            Box(
+                                Modifier
+                                    .fillMaxWidth()
+                                    .fillMaxHeight(f)
+                                    .background(color, RoundedCornerShape(7.dp))
+                            )
+                        }
+                    } else {
+                        Box(Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.BottomCenter) {
+                            Box(
+                                Modifier
+                                    .widthIn(max = 24.dp)
+                                    .fillMaxWidth()
+                                    .fillMaxHeight(f)
+                                    .background(color, RoundedCornerShape(7.dp))
+                            )
+                        }
                     }
                     Text(
-                        d.dayOfWeek.getDisplayName(java.time.format.TextStyle.NARROW, Locale.US),
-                        style = T.bold(11, if (isToday) colors.todayText else C.Muted)
+                        if (showNumbers) (if (isToday) "Today" else d.dayOfWeek.getDisplayName(java.time.format.TextStyle.SHORT, Locale.US))
+                        else d.dayOfWeek.getDisplayName(java.time.format.TextStyle.NARROW, Locale.US),
+                        style = T.bold(11, if (isToday) colors.todayText else C.Muted),
+                        maxLines = 1, softWrap = false
                     )
                 }
+            }
+        }
+        if (showNumbers) {
+            val total = values.sum()
+            val logged = values.count { it > 0 }
+            Box(Modifier.fillMaxWidth().height(1.dp).background(C.Line))
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Text("7 days · ${fmt(total)} ${if (track == Track.STEPS) "steps" else if (track == Track.WATER) "ml" else "g"}", style = T.body(12, C.Muted), modifier = Modifier.weight(1f))
+                Text("Average ${fmt(if (logged > 0) total / logged else 0)}", style = T.bold(12, C.Ink))
             }
         }
     }

@@ -90,7 +90,7 @@ fun Onboarding(initial: AppState, onFinish: (name: String, age: Int, avatar: Str
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(C.Bg)
+            .pageBackground()
             .padding(horizontal = 20.dp, vertical = 16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {

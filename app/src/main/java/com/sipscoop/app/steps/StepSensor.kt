@@ -88,6 +88,7 @@ object StepSensor {
             // Logs the new steps by hour and closes a walk that has ended.
             com.sipscoop.app.data.StepLog.sync(app, state)
             if (total != null) WidgetSync.refreshAll(app)
+            com.sipscoop.app.notify.StepNotification.update(app, state, force = true)
             then()
         }
     }

@@ -1,148 +1,209 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Small widget (2x2): steps, water and protein with bars, and the two log buttons. -->
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/widget_root"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
-
-<LinearLayout
-    android:id="@+id/normal_group"
-    android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/widget_bg"
-    android:orientation="vertical"
-    android:padding="9dp">
+    android:background="@drawable/widget_glass"
+    android:padding="12dp">
 
     <LinearLayout
+        android:id="@+id/normal_group"
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_marginBottom="4dp"
-        android:layout_weight="1"
-        android:background="@drawable/widget_card_water"
+        android:layout_height="match_parent"
         android:gravity="center_vertical"
-        android:orientation="horizontal"
-        android:paddingStart="10dp"
-        android:paddingEnd="4dp">
+        android:orientation="vertical">
 
         <LinearLayout
-            android:layout_width="0dp"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:orientation="vertical">
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <ImageView
+                android:layout_width="12dp"
+                android:layout_height="12dp"
+                android:layout_marginEnd="5dp"
+                android:src="@drawable/widget_ic_shoe" />
 
             <TextView
+                android:id="@+id/steps_value"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:fontFamily="sans-serif-black"
-                android:text="@string/water"
-                android:textColor="@color/blue_text"
+                android:fontFamily="sans-serif-medium"
+                android:maxLines="1"
+                android:textColor="@color/widget_ink"
+                android:textSize="15sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/steps_goal"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="4dp"
+                android:maxLines="1"
+                android:textColor="@color/widget_faint"
                 android:textSize="11sp" />
+        </LinearLayout>
+
+        <ProgressBar
+            android:id="@+id/steps_bar"
+            style="@android:style/Widget.ProgressBar.Horizontal"
+            android:layout_width="match_parent"
+            android:layout_height="3dp"
+            android:layout_marginTop="4dp"
+            android:layout_marginBottom="7dp"
+            android:max="100"
+            android:progressDrawable="@drawable/widget_bar_steps" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <ImageView
+                android:layout_width="12dp"
+                android:layout_height="12dp"
+                android:layout_marginEnd="5dp"
+                android:src="@drawable/widget_ic_drop" />
 
             <TextView
                 android:id="@+id/water_value"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:fontFamily="sans-serif-black"
+                android:fontFamily="sans-serif-medium"
                 android:maxLines="1"
-                android:text="0 L"
-                android:textColor="@color/ink"
-                android:textSize="18sp" />
-        </LinearLayout>
-
-        <TextView
-            android:id="@+id/water_add"
-            android:layout_width="50dp"
-            android:layout_height="50dp"
-            android:background="@drawable/widget_btn_water"
-            android:fontFamily="sans-serif-black"
-            android:gravity="center"
-            android:paddingBottom="4dp"
-            android:text="+250"
-            android:textColor="#FFFFFF"
-            android:textSize="13sp" />
-    </LinearLayout>
-
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_marginTop="4dp"
-        android:layout_weight="1"
-        android:background="@drawable/widget_card_protein"
-        android:gravity="center_vertical"
-        android:orientation="horizontal"
-        android:paddingStart="10dp"
-        android:paddingEnd="4dp">
-
-        <LinearLayout
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:orientation="vertical">
+                android:textColor="@color/widget_ink"
+                android:textSize="15sp"
+                android:textStyle="bold" />
 
             <TextView
+                android:id="@+id/water_goal"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:fontFamily="sans-serif-black"
-                android:text="@string/protein"
-                android:textColor="@color/orange_text"
+                android:layout_marginStart="4dp"
+                android:maxLines="1"
+                android:textColor="@color/widget_faint"
                 android:textSize="11sp" />
+        </LinearLayout>
+
+        <ProgressBar
+            android:id="@+id/water_bar"
+            style="@android:style/Widget.ProgressBar.Horizontal"
+            android:layout_width="match_parent"
+            android:layout_height="3dp"
+            android:layout_marginTop="4dp"
+            android:layout_marginBottom="7dp"
+            android:max="100"
+            android:progressDrawable="@drawable/widget_bar_water" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <ImageView
+                android:layout_width="12dp"
+                android:layout_height="12dp"
+                android:layout_marginEnd="5dp"
+                android:src="@drawable/widget_ic_egg" />
 
             <TextView
                 android:id="@+id/protein_value"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:fontFamily="sans-serif-black"
+                android:fontFamily="sans-serif-medium"
                 android:maxLines="1"
-                android:text="0 g"
-                android:textColor="@color/ink"
-                android:textSize="18sp" />
+                android:textColor="@color/widget_ink"
+                android:textSize="15sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/protein_goal"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="4dp"
+                android:maxLines="1"
+                android:textColor="@color/widget_faint"
+                android:textSize="11sp" />
         </LinearLayout>
 
-        <TextView
-            android:id="@+id/protein_add"
-            android:layout_width="50dp"
-            android:layout_height="50dp"
-            android:background="@drawable/widget_btn_protein"
-            android:fontFamily="sans-serif-black"
-            android:gravity="center"
-            android:paddingBottom="4dp"
-            android:text="+10 g"
-            android:textColor="#FFFFFF"
-            android:textSize="13sp" />
+        <ProgressBar
+            android:id="@+id/protein_bar"
+            style="@android:style/Widget.ProgressBar.Horizontal"
+            android:layout_width="match_parent"
+            android:layout_height="3dp"
+            android:layout_marginTop="4dp"
+            android:layout_marginBottom="7dp"
+            android:max="100"
+            android:progressDrawable="@drawable/widget_bar_protein" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="30dp"
+            android:layout_marginTop="2dp"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/water_add"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_marginEnd="6dp"
+                android:layout_weight="1"
+                android:background="@drawable/widget_pill_water"
+                android:fontFamily="sans-serif-medium"
+                android:gravity="center"
+                android:maxLines="1"
+                android:textColor="#FFFFFF"
+                android:textSize="13sp" />
+
+            <TextView
+                android:id="@+id/protein_add"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:background="@drawable/widget_pill_protein"
+                android:fontFamily="sans-serif-medium"
+                android:gravity="center"
+                android:maxLines="1"
+                android:textColor="#FFFFFF"
+                android:textSize="13sp" />
+        </LinearLayout>
     </LinearLayout>
-</LinearLayout>
 
     <LinearLayout
         android:id="@+id/done_group"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="@drawable/widget_bg_done"
         android:gravity="center"
         android:orientation="vertical"
-        android:padding="10dp"
         android:visibility="gone">
 
         <ImageView
-            android:layout_width="78dp"
-            android:layout_height="72dp"
+            android:id="@+id/done_rings"
+            android:layout_width="64dp"
+            android:layout_height="64dp"
             android:contentDescription="@null"
-            android:src="@drawable/widget_mascots" />
+            android:src="@drawable/widget_rings_preview" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:fontFamily="sans-serif-black"
-            android:gravity="center"
+            android:layout_marginTop="8dp"
+            android:fontFamily="sans-serif-medium"
             android:text="@string/widget_done_short"
-            android:textColor="@color/ink"
-            android:textSize="15sp" />
+            android:textColor="@color/widget_ink"
+            android:textSize="14sp"
+            android:textStyle="bold" />
 
         <TextView
+            android:id="@+id/done_streak"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="@string/widget_done_sub"
-            android:textColor="@color/green_text"
-            android:textSize="12sp"
-            android:textStyle="bold" />
+            android:layout_marginTop="2dp"
+            android:textColor="@color/widget_muted"
+            android:textSize="11sp" />
     </LinearLayout>
 </FrameLayout>
