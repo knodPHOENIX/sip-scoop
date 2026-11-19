@@ -236,7 +236,7 @@ fun TrackerScreen(
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .background(C.OrangeCard, RoundedCornerShape(20.dp))
+                        .glass(RoundedCornerShape(20.dp), tint = C.Orange)
                         .padding(18.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
@@ -520,7 +520,7 @@ fun InlineNumber(value: Int, unit: String, accent: Accent, onChange: (Int) -> Un
     Column(
         modifier = modifier
             .heightIn(min = 60.dp)
-            .background(accent.card, RoundedCornerShape(16.dp))
+            .glass(RoundedCornerShape(16.dp), tint = accent.face)
             .border(1.dp, accent.face.copy(alpha = 0.5f), RoundedCornerShape(16.dp))
             .padding(horizontal = 8.dp, vertical = 6.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -545,7 +545,7 @@ fun InlineNumber(value: Int, unit: String, accent: Accent, onChange: (Int) -> Un
             cursorBrush = SolidColor(accent.face),
             modifier = Modifier
                 .fillMaxWidth()
-                .background(C.Surface, RoundedCornerShape(10.dp))
+                .glass(RoundedCornerShape(10.dp))
                 .padding(vertical = 4.dp)
         )
         Text(unit, style = T.bold(12, accent.text))
@@ -566,8 +566,7 @@ fun InlineText(value: String, onChange: (String) -> Unit, modifier: Modifier = M
         textStyle = T.body(15),
         cursorBrush = SolidColor(C.Orange),
         modifier = modifier
-            .background(C.Surface, RoundedCornerShape(12.dp))
-            .border(1.dp, C.OrangeLine, RoundedCornerShape(12.dp))
+            .glass(RoundedCornerShape(12.dp))
             .padding(horizontal = 12.dp, vertical = 12.dp)
     )
 }

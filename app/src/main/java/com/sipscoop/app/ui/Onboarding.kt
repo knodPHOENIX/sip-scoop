@@ -187,7 +187,7 @@ fun Onboarding(initial: AppState, onFinish: (name: String, age: Int, avatar: Str
                         Column(
                             Modifier
                                 .fillMaxWidth()
-                                .background(C.BlueCard, RoundedCornerShape(22.dp))
+                                .glass(RoundedCornerShape(22.dp), tint = C.Blue)
                                 .padding(16.dp),
                             verticalArrangement = Arrangement.spacedBy(10.dp)
                         ) {
@@ -211,7 +211,7 @@ fun Onboarding(initial: AppState, onFinish: (name: String, age: Int, avatar: Str
                         Column(
                             Modifier
                                 .fillMaxWidth()
-                                .background(C.OrangeCard, RoundedCornerShape(22.dp))
+                                .glass(RoundedCornerShape(22.dp), tint = C.Orange)
                                 .padding(16.dp),
                             verticalArrangement = Arrangement.spacedBy(10.dp)
                         ) {
@@ -367,8 +367,8 @@ private fun ViewChoice(title: String, sub: String, selected: Boolean, preview: @
     Row(
         Modifier
             .fillMaxWidth()
-            .background(bg, RoundedCornerShape(20.dp))
-            .border(1.dp, edge, RoundedCornerShape(20.dp))
+            .glass(RoundedCornerShape(20.dp), tint = if (selected) C.Blue else null)
+            .then(if (selected) Modifier.border(1.5.dp, edge, RoundedCornerShape(20.dp)) else Modifier)
             .clickable(onClick = onClick)
             .padding(14.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -377,7 +377,7 @@ private fun ViewChoice(title: String, sub: String, selected: Boolean, preview: @
         Box(
             Modifier
                 .size(96.dp, 76.dp)
-                .background(C.Surface, RoundedCornerShape(14.dp))
+                .glass(RoundedCornerShape(14.dp))
                 .padding(4.dp)
         ) { preview() }
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {

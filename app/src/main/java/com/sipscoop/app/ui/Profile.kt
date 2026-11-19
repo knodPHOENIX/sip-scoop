@@ -144,7 +144,7 @@ private fun Card(content: @Composable ColumnScope.() -> Unit) {
     Column(
         Modifier
             .fillMaxWidth()
-            .background(C.Surface, RoundedCornerShape(18.dp))
+            .glass(RoundedCornerShape(18.dp))
             .border(1.dp, C.Line, RoundedCornerShape(18.dp)),
         content = content
     )
@@ -384,7 +384,7 @@ fun ProfileScreen(
                     style = T.body(14),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .background(C.Faint, RoundedCornerShape(14.dp, 14.dp, 14.dp, 4.dp))
+                        .glass(RoundedCornerShape(14.dp, 14.dp, 14.dp, 4.dp))
                         .padding(horizontal = 12.dp, vertical = 10.dp)
                 )
             }
@@ -486,8 +486,7 @@ fun AppearanceScreen(
         Column(
             Modifier
                 .fillMaxWidth()
-                .background(C.Surface, RoundedCornerShape(20.dp))
-                .border(1.dp, C.Line, RoundedCornerShape(20.dp))
+                .glass(RoundedCornerShape(20.dp))
                 .padding(14.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
@@ -562,8 +561,8 @@ private fun ViewCard(
     val bg by animateColorAsState(if (selected) C.BlueCard else C.Surface, tween(220), label = "viewBg")
     Column(
         modifier
-            .background(bg, RoundedCornerShape(16.dp))
-            .border(1.dp, border, RoundedCornerShape(16.dp))
+            .glass(RoundedCornerShape(16.dp), tint = if (selected) C.Blue else null)
+            .then(if (selected) Modifier.border(1.5.dp, border, RoundedCornerShape(16.dp)) else Modifier)
             .clickable(onClick = onClick)
             .padding(vertical = 10.dp, horizontal = 6.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -621,7 +620,7 @@ private fun ThemeCard(mode: String, selected: Boolean, modifier: Modifier, onCli
     Column(
         modifier
             .graphicsLayer { scaleX = scale; scaleY = scale }
-            .background(C.Surface, RoundedCornerShape(18.dp))
+            .glass(RoundedCornerShape(18.dp))
             .border(if (selected) 3.dp else 2.dp, border, RoundedCornerShape(18.dp))
             .clickable(onClick = onClick)
             .padding(10.dp),
@@ -898,7 +897,7 @@ fun HistoryScreen(state: AppState, onBack: () -> Unit) {
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         TopBar("History", onBack) {
-            Row(Modifier.background(C.Faint, RoundedCornerShape(12.dp)).padding(4.dp)) {
+            Row(Modifier.glass(RoundedCornerShape(12.dp)).padding(4.dp)) {
                 listOf(false to "Week", true to "Month").forEach { (isMonth, label) ->
                     val sel = month == isMonth
                     Text(
@@ -916,8 +915,7 @@ fun HistoryScreen(state: AppState, onBack: () -> Unit) {
         Column(
             Modifier
                 .fillMaxWidth()
-                .background(C.Surface, RoundedCornerShape(20.dp))
-                .border(1.dp, C.Line, RoundedCornerShape(20.dp))
+                .glass(RoundedCornerShape(20.dp))
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
@@ -986,8 +984,7 @@ fun HistoryScreen(state: AppState, onBack: () -> Unit) {
                 Row(
                     Modifier
                         .fillMaxWidth()
-                        .background(C.Surface, RoundedCornerShape(16.dp))
-                        .border(1.dp, C.Line, RoundedCornerShape(16.dp))
+                        .glass(RoundedCornerShape(16.dp))
                         .padding(horizontal = 12.dp, vertical = 10.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -1152,7 +1149,7 @@ fun EditProfileDialog(state: AppState, onDismiss: () -> Unit, onSave: (String, S
                                 Modifier
                                     .weight(1f)
                                     .height(66.dp)
-                                    .background(C.Faint, RoundedCornerShape(16.dp))
+                                    .glass(RoundedCornerShape(16.dp))
                                     .border(1.dp, C.BlueStreakLine, RoundedCornerShape(16.dp))
                                     .clickable(enabled = !loading) {
                                         picker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))

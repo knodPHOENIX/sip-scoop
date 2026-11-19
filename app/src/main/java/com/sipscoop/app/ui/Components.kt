@@ -105,8 +105,13 @@ fun Btn3D(
             .clickable(interactionSource = interaction, indication = null, enabled = enabled, onClick = onClick)
             .then(if (fill) Modifier.fillMaxWidth() else Modifier)
             .heightIn(min = minHeight + depth)
-            .background(face, shape)
-            .border(1.dp, line, shape)
+            .then(
+                if (isNeutralGlass(face)) {
+                    Modifier.glass(shape).then(if (border != edge) Modifier.border(1.dp, border, shape) else Modifier)
+                } else {
+                    Modifier.background(face, shape).glassSheen(shape).border(1.dp, glassEdge(line), shape)
+                }
+            )
             .padding(contentPadding)
             .padding(vertical = depth / 2),
         horizontalAlignment = horizontalAlignment,
@@ -140,8 +145,16 @@ fun SquishButton(
                 scaleY = scale.value / 100f
             }
             .clickable(interactionSource = interaction, indication = null, onClick = onClick)
-            .background(background, shape)
-            .then(if (borderColor != null) Modifier.border(1.dp, borderColor, shape) else Modifier)
+            .then(
+                if (isNeutralGlass(background)) {
+                    Modifier.glass(shape).then(
+                        if (borderColor != null && borderColor != C.Line && borderColor != C.NavLine) Modifier.border(1.dp, borderColor, shape) else Modifier
+                    )
+                } else {
+                    Modifier.background(background, shape).glassSheen(shape)
+                        .border(1.dp, glassEdge(borderColor ?: background), shape)
+                }
+            )
             .padding(contentPadding),
         contentAlignment = Alignment.Center,
         content = content
@@ -164,7 +177,7 @@ fun SectionLabel(text: String, modifier: Modifier = Modifier) {
 fun SpeechBubble(text: String, borderColor: Color, modifier: Modifier = Modifier) {
     Box(
         modifier
-            .border(1.dp, borderColor, RoundedCornerShape(16.dp))
+            .glass(RoundedCornerShape(16.dp))
             .padding(horizontal = 14.dp, vertical = 10.dp)
     ) {
         Text(text, style = T.body(15))
@@ -210,8 +223,7 @@ fun StreakBadge(days: Int, steps: Boolean, onClick: () -> Unit = {}) {
         modifier = Modifier
             .clip(CircleShape)
             .clickable(onClickLabel = if (steps) "Open step streak calendar" else "Open diet streak calendar", onClick = onClick)
-            .background(if (steps) C.YellowSoft else C.BlueSoft, CircleShape)
-            .border(1.dp, if (steps) C.YellowLine else C.BlueStreakLine, CircleShape)
+            .glass(CircleShape, tint = if (steps) C.Gold else C.Blue)
             .heightIn(min = 26.dp)
             .padding(start = 8.dp, end = 10.dp, top = 3.dp, bottom = 3.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -429,8 +441,7 @@ fun NoteBox(text: String, warning: Boolean) {
     Row(
         Modifier
             .fillMaxWidth()
-            .background(bg, RoundedCornerShape(14.dp))
-            .border(1.dp, line, RoundedCornerShape(14.dp))
+            .glass(RoundedCornerShape(14.dp), tint = if (warning) C.Gold else C.Blue)
             .padding(horizontal = 12.dp, vertical = 10.dp),
         horizontalArrangement = Arrangement.spacedBy(10.dp)
     ) {

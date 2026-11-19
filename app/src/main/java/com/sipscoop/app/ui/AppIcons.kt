@@ -112,8 +112,8 @@ fun AppIconPicker() {
                         Modifier
                             .fillMaxWidth()
                             .graphicsLayer { scaleX = scale; scaleY = scale }
-                            .background(if (selected) C.BlueCard else C.Surface, RoundedCornerShape(18.dp))
-                            .border(if (selected) 3.dp else 2.dp, border, RoundedCornerShape(18.dp))
+                            .glass(RoundedCornerShape(18.dp), tint = if (selected) C.Blue else null)
+                            .then(if (selected) Modifier.border(1.5.dp, border, RoundedCornerShape(18.dp)) else Modifier)
                             .clickable {
                                 if (!selected) {
                                     chosen = icon

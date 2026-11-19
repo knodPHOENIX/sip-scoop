@@ -11,7 +11,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.foundation.background
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shape
+import androidx.compose.foundation.border
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
@@ -174,9 +178,41 @@ object T {
     )
 }
 
+/** True for the plain see-through fills that should be drawn as neutral glass. */
+fun isNeutralGlass(c: Color): Boolean = c == C.Surface || c == C.Faint || c == C.Bg || c == C.Glass
+
+/**
+ * Frosted glass: a see-through fill that is a little lighter at the top, with a bright
+ * thin edge along the top that fades towards the bottom. Pass [tint] for coloured glass.
+ */
+fun Modifier.glass(shape: Shape, tint: Color? = null): Modifier {
+    val dark = ThemeState.dark
+    val fill = when {
+        tint != null -> Brush.verticalGradient(listOf(tint.copy(alpha = if (dark) 0.22f else 0.16f), tint.copy(alpha = if (dark) 0.08f else 0.07f)))
+        dark -> Brush.verticalGradient(listOf(Color.White.copy(alpha = 0.12f), Color.White.copy(alpha = 0.045f)))
+        else -> Brush.verticalGradient(listOf(Color.White.copy(alpha = 0.95f), Color.White.copy(alpha = 0.68f)))
+    }
+    val edge = when {
+        dark -> Brush.verticalGradient(listOf(Color.White.copy(alpha = 0.30f), Color.White.copy(alpha = 0.06f)))
+        tint != null -> Brush.verticalGradient(listOf(Color.White, tint.copy(alpha = 0.30f)))
+        else -> Brush.verticalGradient(listOf(Color.White, Color(0x1A0F1318)))
+    }
+    return this.background(fill, shape).border(1.dp, edge, shape)
+}
+
+/** A soft light across the top half, so solid coloured buttons read as glass too. */
+fun Modifier.glassSheen(shape: Shape): Modifier = background(
+    Brush.verticalGradient(0f to Color.White.copy(alpha = if (ThemeState.dark) 0.16f else 0.28f), 0.6f to Color.Transparent),
+    shape
+)
+
+/** Bright top edge for a solid coloured button, fading into [bottom]. */
+fun glassEdge(bottom: Color): Brush =
+    Brush.verticalGradient(listOf(Color.White.copy(alpha = if (ThemeState.dark) 0.38f else 0.6f), bottom))
+
 /** The calm neutral page background used behind every screen. */
 fun Modifier.pageBackground(): Modifier = background(
-    androidx.compose.ui.graphics.Brush.verticalGradient(0f to C.PageTop, 0.4f to C.PageMid, 1f to C.PageBottom)
+    Brush.verticalGradient(0f to C.PageTop, 0.4f to C.PageMid, 1f to C.PageBottom)
 )
 
 @Composable

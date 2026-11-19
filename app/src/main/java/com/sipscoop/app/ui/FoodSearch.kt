@@ -194,7 +194,7 @@ fun FoodSearchScreen(
                         Modifier
                             .weight(1f)
                             .height(48.dp)
-                            .background(C.Surface, RoundedCornerShape(14.dp))
+                            .glass(RoundedCornerShape(14.dp))
                             .border(1.dp, border, RoundedCornerShape(14.dp))
                             .padding(horizontal = 12.dp),
                         verticalAlignment = Alignment.CenterVertically,
@@ -524,7 +524,7 @@ private fun FoodSheet(
             Row(
                 Modifier
                     .fillMaxWidth()
-                    .background(C.Faint, RoundedCornerShape(14.dp))
+                    .glass(RoundedCornerShape(14.dp))
                     .padding(4.dp),
                 horizontalArrangement = Arrangement.spacedBy(6.dp)
             ) {
@@ -583,7 +583,7 @@ private fun FoodSheet(
         Row(
             Modifier
                 .fillMaxWidth()
-                .background(C.OrangeCard, RoundedCornerShape(16.dp))
+                .glass(RoundedCornerShape(16.dp), tint = C.Orange)
                 .padding(horizontal = 14.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {

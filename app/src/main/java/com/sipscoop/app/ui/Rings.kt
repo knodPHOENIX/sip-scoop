@@ -160,8 +160,7 @@ fun RingChips(state: AppState, position: Float, stepsOn: Boolean, onPick: (Int) 
             Row(
                 Modifier
                     .weight(1f)
-                    .background(bg, CircleShape)
-                    .border(1.dp, edge, CircleShape)
+                    .glass(CircleShape, tint = if (on) accents[i].face else null)
                     .clickable { onPick(i) }
                     .padding(horizontal = 6.dp, vertical = 6.dp),
                 verticalAlignment = Alignment.CenterVertically,

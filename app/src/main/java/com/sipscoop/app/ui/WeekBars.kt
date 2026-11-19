@@ -88,8 +88,7 @@ fun WeekBars(state: AppState, track: Track, title: String, modifier: Modifier, s
 
     Column(
         modifier
-            .background(C.Surface, RoundedCornerShape(18.dp))
-            .border(1.dp, C.Line, RoundedCornerShape(18.dp))
+            .glass(RoundedCornerShape(18.dp))
             .padding(horizontal = 14.dp, vertical = 12.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {

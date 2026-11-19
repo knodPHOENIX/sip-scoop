@@ -72,7 +72,7 @@ fun EditReadingDialog(
                 Row(
                     Modifier
                         .fillMaxWidth()
-                        .background(accent.card, RoundedCornerShape(14.dp))
+                        .glass(RoundedCornerShape(14.dp), tint = accent.face)
                         .padding(horizontal = 14.dp, vertical = 10.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -99,7 +99,7 @@ fun EditReadingDialog(
                             Box(
                                 Modifier
                                     .weight(1f)
-                                    .background(C.Surface, RoundedCornerShape(12.dp))
+                                    .glass(RoundedCornerShape(12.dp))
                                     .border(1.dp, if (suspicious) C.Red else C.Line, RoundedCornerShape(12.dp))
                                     .padding(horizontal = 12.dp, vertical = 9.dp)
                             ) {
@@ -150,8 +150,7 @@ fun EditReadingDialog(
                     Box(
                         Modifier
                             .width(120.dp)
-                            .background(C.Surface, RoundedCornerShape(12.dp))
-                            .border(1.dp, C.Line, RoundedCornerShape(12.dp))
+                            .glass(RoundedCornerShape(12.dp))
                             .padding(horizontal = 12.dp, vertical = 9.dp)
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically) {

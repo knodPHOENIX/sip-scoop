@@ -258,7 +258,7 @@ private fun StepRing(steps: Int, goal: Int, fraction: Float, modifier: Modifier)
 private fun StepFact(modifier: Modifier, icon: @Composable () -> Unit, value: String, label: String) {
     Row(
         modifier
-            .background(C.GoldCard, RoundedCornerShape(16.dp))
+            .glass(RoundedCornerShape(16.dp), tint = C.Gold)
             .padding(horizontal = 12.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(10.dp)
@@ -290,7 +290,7 @@ private fun hourLabel(h: Int): String {
 private fun FactTile(modifier: Modifier, value: String, label: String) {
     Column(
         modifier
-            .background(C.GoldCard, RoundedCornerShape(16.dp))
+            .glass(RoundedCornerShape(16.dp), tint = C.Gold)
             .padding(vertical = 10.dp, horizontal = 4.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
@@ -313,8 +313,11 @@ private fun DayPicker(today: LocalDate, back: Int, onPick: (Int) -> Unit) {
                 Column(
                     Modifier
                         .weight(1f)
-                        .background(bg, RoundedCornerShape(14.dp))
-                        .border(1.dp, if (on) C.GoldEdge else C.Line, RoundedCornerShape(14.dp))
+                        .then(
+                            if (on) Modifier.background(bg, RoundedCornerShape(14.dp)).glassSheen(RoundedCornerShape(14.dp))
+                                .border(1.dp, glassEdge(C.GoldEdge), RoundedCornerShape(14.dp))
+                            else Modifier.glass(RoundedCornerShape(14.dp))
+                        )
                         .clickable { onPick(b) }
                         .padding(vertical = 7.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
@@ -344,8 +347,7 @@ private fun ActivityChart(state: AppState, hours: IntArray, back: Int, day: Loca
     Column(
         Modifier
             .fillMaxWidth()
-            .background(C.Surface, RoundedCornerShape(18.dp))
-            .border(1.dp, C.Line, RoundedCornerShape(18.dp))
+            .glass(RoundedCornerShape(18.dp))
             .padding(14.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
@@ -354,7 +356,7 @@ private fun ActivityChart(state: AppState, hours: IntArray, back: Int, day: Loca
                 if (!byHour) "This week" else if (back == 0) "Today by hour" else "${shortDay(day)} by hour",
                 style = T.bold(15), modifier = Modifier.weight(1f)
             )
-            Row(Modifier.background(C.Faint, CircleShape).padding(3.dp)) {
+            Row(Modifier.glass(CircleShape).padding(3.dp)) {
                 listOf(true to "By hour", false to "Week").forEach { (v, label) ->
                     val on = byHour == v
                     val bg by animateColorAsState(if (on) C.Gold else Color.Transparent, tween(220), label = "segBg")
@@ -374,7 +376,7 @@ private fun ActivityChart(state: AppState, hours: IntArray, back: Int, day: Loca
             Box(
                 Modifier
                     .fillMaxWidth()
-                    .background(C.GoldCard, RoundedCornerShape(12.dp))
+                    .glass(RoundedCornerShape(12.dp), tint = C.Gold)
                     .padding(vertical = 7.dp),
                 contentAlignment = Alignment.Center
             ) {
@@ -444,8 +446,7 @@ private fun WalksCard(walks: List<Walk>, title: String) {
     Column(
         Modifier
             .fillMaxWidth()
-            .background(C.Surface, RoundedCornerShape(18.dp))
-            .border(1.dp, C.Line, RoundedCornerShape(18.dp))
+            .glass(RoundedCornerShape(18.dp))
             .padding(14.dp),
         verticalArrangement = Arrangement.spacedBy(4.dp)
     ) {
@@ -478,7 +479,7 @@ private fun WalksCard(walks: List<Walk>, title: String) {
                     Modifier
                         .weight(1f)
                         .padding(vertical = 5.dp)
-                        .background(C.GoldCard, RoundedCornerShape(14.dp))
+                        .glass(RoundedCornerShape(14.dp), tint = C.Gold)
                         .padding(horizontal = 12.dp, vertical = 10.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
