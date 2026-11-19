@@ -55,6 +55,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
@@ -474,8 +475,11 @@ fun Popup(
                 .widthIn(max = 420.dp)
                 .fillMaxWidth()
                 .wrapContentHeight()
-                .background(C.Sheet, RoundedCornerShape(24.dp))
-                .border(1.dp, C.Line, RoundedCornerShape(24.dp))
+                .background(
+                    Brush.verticalGradient(listOf(C.SheetTop, C.SheetBottom)),
+                    RoundedCornerShape(24.dp)
+                )
+                .border(1.dp, glassEdge(C.Line), RoundedCornerShape(24.dp))
         ) {
             Column(
                 Modifier
@@ -507,8 +511,11 @@ fun GlassBlurBehind(radius: Int = 48) {
     val view = androidx.compose.ui.platform.LocalView.current
     androidx.compose.runtime.SideEffect {
         val window = (view.parent as? androidx.compose.ui.window.DialogWindowProvider)?.window
+        // A deeper dim on every phone, so the frosted sheet stands out.
+        if (window != null && android.os.Build.VERSION.SDK_INT < 31) runCatching { window.setDimAmount(0.6f) }
         if (window != null && android.os.Build.VERSION.SDK_INT >= 31) {
             runCatching {
+                window.setDimAmount(0.6f)
                 window.addFlags(android.view.WindowManager.LayoutParams.FLAG_BLUR_BEHIND)
                 val attrs = window.attributes
                 attrs.blurBehindRadius = radius

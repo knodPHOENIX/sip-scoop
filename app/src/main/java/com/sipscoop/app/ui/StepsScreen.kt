@@ -186,11 +186,9 @@ private fun StepsToday(state: AppState, update: ((AppState) -> AppState) -> Unit
             Pill("Goal ${fmt(goal)} · edit", StepAccent) { showGoal = true }
         }
 
-        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            Spacer(Modifier.weight(1f))
-            if (compact) {
-                Pill("Goal ${fmt(goal)} · edit", StepAccent) { showGoal = true }
-            } else {
+        if (!compact) {
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Spacer(Modifier.weight(1f))
                 SwipeHint("Swipe for water", Arrangement.End)
             }
         }
@@ -207,6 +205,9 @@ private fun StepsToday(state: AppState, update: ((AppState) -> AppState) -> Unit
         ActivityChart(state, hours, back, day)
 
         WalksCard(walks, if (back == 0) "Walks today" else "Walks on ${shortDay(day)}")
+
+        // Rings view: the daily goal sits last, since it rarely needs changing.
+        if (compact) GoalRow(goal) { showGoal = true }
     }
 
     if (showGoal) {
@@ -296,6 +297,24 @@ private fun FactTile(modifier: Modifier, value: String, label: String) {
     ) {
         Text(value, style = T.display(18, C.GoldText), maxLines = 1)
         Text(label, style = T.body(11, C.Muted), maxLines = 1)
+    }
+}
+
+/** "Daily step goal · 500 steps" with an Edit button, as one glass row. */
+@Composable
+private fun GoalRow(goal: Int, onEdit: () -> Unit) {
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .glass(RoundedCornerShape(16.dp))
+            .padding(start = 14.dp, end = 10.dp, top = 10.dp, bottom = 10.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Column(Modifier.weight(1f)) {
+            Text("Daily step goal", style = T.body(12, C.Muted))
+            Text("${fmt(goal)} steps", style = T.bold(16))
+        }
+        Pill("Edit", StepAccent, onClick = onEdit)
     }
 }
 

@@ -33,6 +33,8 @@ jobs:
         run: cp app/build/outputs/apk/release/app-release.apk SipAndScoop.apk
 
       - name: Keep the APK with this run
+        # A GitHub storage hiccup here shouldn't stop the release below.
+        continue-on-error: true
         uses: actions/upload-artifact@v4
         with:
           name: SipAndScoop-apk

@@ -101,7 +101,10 @@ object C {
     val BlueStreakLine: Color get() = pick(0x332F80ED, 0x404EA8FF)
 
     /** Opaque glass for pop-ups, sheets and toasts that sit on top of other content. */
-    val Sheet: Color get() = pick(0xF2FFFFFF, 0xE61C1F25)
+    val Sheet: Color get() = pick(0xFAFFFFFF, 0xFA1C1F25)
+    /** Frosted pop-up sheet: solid, a touch lighter at the top. */
+    val SheetTop: Color get() = pick(0xFFFFFFFF, 0xFF2A2E36)
+    val SheetBottom: Color get() = pick(0xFFF3F5F8, 0xFF1A1D23)
 
     /** The page background runs from a slightly lighter top to a deeper bottom. */
     val PageTop: Color get() = pick(0xFFF7F8FA, 0xFF1A1D23)
