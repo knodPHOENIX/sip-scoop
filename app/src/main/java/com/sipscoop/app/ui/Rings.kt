@@ -60,7 +60,7 @@ fun ringsTint(position: Float): Color {
     else androidx.compose.ui.graphics.lerp(C.TintWater, C.TintProtein, p - 1f)
 }
 
-private fun AppState.fraction(i: Int, stepsOn: Boolean): Float {
+internal fun AppState.fraction(i: Int, stepsOn: Boolean): Float {
     val track = Track.entries[i]
     if (track == Track.STEPS && !stepsOn) return 0f
     return todayOf(track).toFloat() / maxOf(1, goalOf(track))
