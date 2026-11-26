@@ -79,6 +79,7 @@ import com.sipscoop.app.data.Food
 import com.sipscoop.app.data.FoodDb
 import com.sipscoop.app.data.FoodItem
 import com.sipscoop.app.data.OpenFoodFacts
+import com.sipscoop.app.data.addKcal
 import com.sipscoop.app.data.addProtein
 import com.sipscoop.app.data.proteinRoom
 import kotlinx.coroutines.Dispatchers
@@ -350,7 +351,7 @@ fun FoodSearchScreen(
                                 else s.copy(foods = s.foods + Food(label, grams))
                             }
                         },
-                        onAdd = { grams ->
+                        onAdd = { grams, kcal ->
                             val room = state.proteinRoom
                             if (room <= 0) {
                                 selected = null
@@ -361,10 +362,14 @@ fun FoodSearchScreen(
                             update { s ->
                                 val recent = if (f.online) s.recentFoods
                                 else (listOf(f.name) + s.recentFoods.filter { it != f.name }).take(8)
-                                s.addProtein(actual).copy(recentFoods = recent)
+                                // Calories go along with it, scaled down if the protein was capped.
+                                val kcalIn = if (grams > 0) (kcal.toLong() * actual / grams).toInt() else 0
+                                s.addProtein(actual).addKcal(kcalIn).copy(recentFoods = recent)
                             }
+                            val kcalShown = if (grams > 0) (kcal.toLong() * actual / grams).toInt() else 0
                             onAdded(
-                                "Added $actual g protein from ${baseName(f.name).lowercase()}" +
+                                "Added $actual g protein" + (if (kcalShown > 0) " · ${fmt(kcalShown)} kcal" else "") +
+                                    " from ${baseName(f.name).lowercase()}" +
                                     if (actual < grams) " (daily limit reached)" else ""
                             )
                             selected = null
@@ -448,7 +453,7 @@ private fun FoodSheet(
     state: AppState,
     onClose: () -> Unit,
     onStar: (label: String, grams: Int) -> Unit,
-    onAdd: (grams: Int) -> Unit
+    onAdd: (grams: Int, kcal: Int) -> Unit
 ) {
     var unitIndex by remember { mutableIntStateOf(0) }
     val unit = food.portions[unitIndex.coerceIn(0, food.portions.lastIndex)]
@@ -592,7 +597,11 @@ private fun FoodSheet(
         }
 
         Btn3D(
-            onClick = { if (rounded > 0) onAdd(rounded) else onClose() },
+            onClick = {
+                // Calories for this amount, when the food has them.
+                val kcal = food.kcal?.let { (it.toLong() * weight / 100).toInt() } ?: 0
+                if (rounded > 0) onAdd(rounded, kcal) else onClose()
+            },
             face = C.Orange, edge = C.OrangeDark, depth = 6.dp,
             contentPadding = PaddingValues(vertical = 13.dp)
         ) {

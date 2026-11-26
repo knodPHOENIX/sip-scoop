@@ -1005,6 +1005,8 @@ fun HistoryScreen(state: AppState, onBack: () -> Unit) {
                                     Text("${fmt(daySteps)} steps", style = T.body(13, C.GoldText))
                                 }
                             }
+                            val dayKcal = if (d.today) state.kcalTotal else state.history[d.date.toString()]?.kcal ?: 0
+                            if (dayKcal > 0) Text("${fmt(dayKcal)} kcal", style = T.body(12, C.Muted))
                         } else if (!d.known) {
                             Text("No data", style = T.body(13, C.Muted))
                         }

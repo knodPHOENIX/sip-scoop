@@ -18,6 +18,11 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -61,6 +66,11 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.sipscoop.app.data.AppState
 import com.sipscoop.app.data.Entry
+import com.sipscoop.app.data.KCAL_DAY_MAX
+import com.sipscoop.app.data.KCAL_ENTRY_MAX
+import com.sipscoop.app.data.KCAL_GOAL_MAX
+import com.sipscoop.app.data.KCAL_GOAL_MIN
+import com.sipscoop.app.data.addKcal
 import com.sipscoop.app.data.addProtein
 import com.sipscoop.app.data.addWater
 import com.sipscoop.app.data.proteinRoom
@@ -107,6 +117,8 @@ fun TrackerScreen(
     var editing by remember { mutableStateOf(false) }
     var showCustom by remember { mutableStateOf(false) }
     var showGoal by remember { mutableStateOf(false) }
+    var showKcalGoal by remember { mutableStateOf(false) }
+    var showKcalAdd by remember { mutableStateOf(false) }
     var editEntry by remember { mutableStateOf<Entry?>(null) }
     var showEditAll by remember { mutableStateOf(false) }
     var limitMsg by remember { mutableStateOf<String?>(null) }
@@ -259,6 +271,16 @@ fun TrackerScreen(
                         .height(70.dp)
                 )
             }
+        }
+
+        // Protein page: today's calories, from food search or typed in.
+        if (!isWater) {
+            CalorieBar(
+                total = state.kcalTotal,
+                goal = state.kcalGoal,
+                onEditGoal = { showKcalGoal = true },
+                onAdd = { showKcalAdd = true }
+            )
         }
 
         AnimatedVisibility(visible = limitMsg != null) {
@@ -448,6 +470,36 @@ fun TrackerScreen(
             }
         )
     }
+    if (showKcalAdd) {
+        val kcalRoom = (KCAL_DAY_MAX - state.kcalTotal).coerceAtLeast(0)
+        AmountDialog(
+            title = "Add calories",
+            initial = 0, unit = "kcal", accent = ProteinAccent, confirmLabel = "Add",
+            max = maxOf(1, minOf(KCAL_ENTRY_MAX, kcalRoom)),
+            maxNote = if (kcalRoom <= 0) "You've reached today's limit of ${fmt(KCAL_DAY_MAX)} kcal."
+            else "You can add up to ${fmt(minOf(KCAL_ENTRY_MAX, kcalRoom))} kcal at a time.",
+            onDismiss = { showKcalAdd = false },
+            onConfirm = { v ->
+                update { it.addKcal(v) }
+                showKcalAdd = false
+            }
+        )
+    }
+    if (showKcalGoal) {
+        AmountDialog(
+            title = "Daily calorie goal",
+            initial = state.kcalGoal, unit = "kcal", accent = ProteinAccent, confirmLabel = "Save",
+            step = 50,
+            max = KCAL_GOAL_MAX,
+            maxNote = "${fmt(KCAL_GOAL_MAX)} kcal is the most you can set.",
+            warning = { v -> if (v in 1 until KCAL_GOAL_MIN) "That's too low for an adult. Please keep it at least ${fmt(KCAL_GOAL_MIN)} kcal a day." else null },
+            onDismiss = { showKcalGoal = false },
+            onConfirm = { v ->
+                update { s -> s.copy(kcalGoal = v.coerceIn(KCAL_GOAL_MIN, KCAL_GOAL_MAX)) }
+                showKcalGoal = false
+            }
+        )
+    }
     if (showEditAll) {
         EditReadingDialog(
             isWater = isWater,
@@ -613,5 +665,78 @@ private fun WidePill(text: String, accent: Accent, modifier: Modifier, onClick: 
             textAlign = androidx.compose.ui.text.style.TextAlign.Center,
             modifier = Modifier.fillMaxWidth().align(Alignment.Center)
         )
+    }
+}
+
+
+/**
+ * Today's calories against the goal. Hold the bar to change the goal; "+ kcal" types calories
+ * in by hand. Past the goal the bar and number turn red.
+ */
+@Composable
+private fun CalorieBar(total: Int, goal: Int, onEditGoal: () -> Unit, onAdd: () -> Unit) {
+    val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
+    val over = total > goal
+    val fill by androidx.compose.animation.core.animateFloatAsState(
+        (total.toFloat() / maxOf(1, goal)).coerceIn(0f, 1f), tween(600), label = "kcal"
+    )
+    val barColor = if (over) C.Red else C.pickColor(0xFFD4A90F, 0xFFE8C547)
+    val shape = RoundedCornerShape(18.dp)
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .glass(shape)
+            .then(if (over) Modifier.border(1.dp, C.Red.copy(alpha = 0.45f), shape) else Modifier)
+            .padding(start = 14.dp, end = 10.dp, top = 12.dp, bottom = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
+        Column(
+            Modifier
+                .weight(1f)
+                .semantics { contentDescription = "Calories ${fmt(total)} of ${fmt(goal)}. Hold to change your goal." }
+                .pointerInput(Unit) {
+                    detectTapGestures(onLongPress = {
+                        haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
+                        onEditGoal()
+                    })
+                }
+        ) {
+            Row(verticalAlignment = Alignment.Bottom) {
+                Text("CALORIES", style = T.label(), modifier = Modifier.weight(1f).padding(bottom = 2.dp))
+                Text(fmt(total), style = T.bold(16, if (over) C.Red else C.Ink))
+                Text(" / ${fmt(goal)} kcal", style = T.body(12, C.Muted), modifier = Modifier.padding(bottom = 1.dp))
+            }
+            Spacer(Modifier.height(8.dp))
+            Box(
+                Modifier
+                    .fillMaxWidth()
+                    .height(8.dp)
+                    .background(C.Grey, CircleShape)
+            ) {
+                Box(
+                    Modifier
+                        .fillMaxWidth(fill)
+                        .fillMaxHeight()
+                        .background(barColor, CircleShape)
+                )
+            }
+            Spacer(Modifier.height(6.dp))
+            Row {
+                Text("Hold the bar to change your goal", style = T.body(11, C.GreyText), modifier = Modifier.weight(1f), maxLines = 1)
+                Text(
+                    if (over) "${fmt(total - goal)} kcal over" else "${fmt(goal - total)} kcal left",
+                    style = if (over) T.bold(11, C.Red) else T.body(11, C.Muted),
+                    maxLines = 1
+                )
+            }
+        }
+        SquishButton(
+            onClick = onAdd,
+            background = C.Surface,
+            shape = RoundedCornerShape(12.dp),
+            borderColor = C.Line,
+            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 10.dp)
+        ) { Text("+ kcal", style = T.bold(13)) }
     }
 }

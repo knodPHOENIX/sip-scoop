@@ -64,7 +64,8 @@ private fun AppState.fraction(i: Int, stepsOn: Boolean): Float {
 
 /**
  * One set of three rings for steps (outside), water and protein (inside).
- * The ring for the page you're on is thick and bright; tap a ring to jump to its page.
+ * All three rings are always shown in full colour; the one for the page you're on is a
+ * little broader, and the widths glide as you swipe. Tap a ring to jump to its page.
  * The rings fill up from empty every time this view appears.
  */
 @Composable
@@ -108,8 +109,9 @@ fun SharedRings(state: AppState, position: Float, stepsOn: Boolean, onPick: (Int
             val c = Offset(size.width / 2f, size.height / 2f)
             for (i in 0..2) {
                 val near = (1f - abs(position - i)).coerceIn(0f, 1f)
-                val w = side * (0.064f + 0.021f * near)
-                val alpha = 0.28f + 0.72f * near
+                // Subtle but clear: about 14 vs 9 on a 220 wide set of rings.
+                val w = side * (0.041f + 0.023f * near)
+                val alpha = 1f
                 val r = radius[i] * side
                 val tl = Offset(c.x - r, c.y - r)
                 val sz = Size(r * 2, r * 2)
@@ -140,34 +142,40 @@ fun SharedRings(state: AppState, position: Float, stepsOn: Boolean, onPick: (Int
     }
 }
 
-/** Steps 78% · Water 58% · Protein 70%. Tap to jump. */
+/** Today's numbers under the rings, each in its own colour: 6,240 · 1,750 ml · 84 g. Tap to jump. */
 @Composable
 fun RingChips(state: AppState, position: Float, stepsOn: Boolean, onPick: (Int) -> Unit) {
     val current = kotlin.math.round(position.coerceIn(0f, 2f)).toInt()
     val names = listOf("Steps", "Water", "Protein")
     val dots = listOf(C.Gold, C.Blue, C.Orange)
     val accents = listOf(StepAccent, WaterAccent, ProteinAccent)
+    val values = listOf(
+        if (stepsOn) fmt(state.steps) else "–",
+        "${fmt(state.waterTotal)} ml",
+        "${state.proteinTotal} g"
+    )
     Row(
         Modifier.fillMaxWidth().padding(horizontal = 16.dp),
         horizontalArrangement = Arrangement.spacedBy(6.dp)
     ) {
         names.forEachIndexed { i, name ->
             val on = i == current
-            val bg by animateColorAsState(if (on) accents[i].soft else C.Surface, tween(300), label = "chipBg")
-            val edge by animateColorAsState(if (on) accents[i].line else C.Line, tween(300), label = "chipEdge")
-            val text by animateColorAsState(if (on) accents[i].text else C.Muted, tween(300), label = "chipText")
-            val pct = (state.fraction(i, stepsOn) * 100).toInt()
+            // The chip of the page you're on is a little brighter.
+            val strength by animateFloatAsState(if (on) 1f else 0f, tween(300), label = "chipOn")
             Row(
                 Modifier
                     .weight(1f)
-                    .glass(CircleShape, tint = if (on) accents[i].face else null)
+                    .semantics { contentDescription = "$name ${values[i]}" }
+                    .glass(CircleShape, tint = accents[i].face)
+                    .border(1.dp, dots[i].copy(alpha = 0.28f + 0.42f * strength), CircleShape)
+                    .background(accents[i].face.copy(alpha = 0.10f * strength), CircleShape)
                     .clickable { onPick(i) }
-                    .padding(horizontal = 6.dp, vertical = 6.dp),
+                    .padding(horizontal = 6.dp, vertical = 7.dp),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(5.dp, Alignment.CenterHorizontally)
+                horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally)
             ) {
-                Box(Modifier.size(8.dp).background(dots[i], CircleShape))
-                Text("$name $pct%", style = T.bold(12, text), maxLines = 1, softWrap = false)
+                Box(Modifier.size(7.dp).background(dots[i], CircleShape))
+                Text(values[i], style = T.bold(13, accents[i].text), maxLines = 1, softWrap = false)
             }
         }
     }

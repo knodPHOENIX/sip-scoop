@@ -23,7 +23,9 @@ data class DayRecord(
     val met: Boolean = false,
     val steps: Int = 0,
     val stepGoal: Int = 0,
-    val stepMet: Boolean = false
+    val stepMet: Boolean = false,
+    val kcal: Int = 0,
+    val kcalGoal: Int = 0
 )
 
 val DEFAULT_FOODS = listOf(
@@ -49,6 +51,11 @@ data class AppState(
     val date: String = LocalDate.now().toString(),
     val water: List<Entry> = emptyList(),
     val protein: List<Entry> = emptyList(),
+    /** Today's calories: from food search, or typed in with "+ kcal". */
+    val kcal: List<Entry> = emptyList(),
+    val kcalGoal: Int = 2000,
+    /** The newest "What's new" pop-up this user has seen (an app versionCode). */
+    val seenWhatsNew: Int = 0,
     val history: Map<String, DayRecord> = emptyMap(),
     /** "light", "dark" or "system" */
     val themeMode: String = "system",
@@ -79,6 +86,7 @@ data class AppState(
 ) {
     val waterTotal: Int get() = water.sumOf { it.amount }
     val proteinTotal: Int get() = protein.sumOf { it.amount }
+    val kcalTotal: Int get() = kcal.sumOf { it.amount }
     val todayMet: Boolean get() = waterTotal >= waterGoal && proteinTotal >= proteinGoal
     val stepsMet: Boolean get() = steps >= stepGoal
 
@@ -140,9 +148,20 @@ fun AppState.withinDailyLimits(): AppState {
     return if (w === water && p === protein) this else copy(water = w, protein = p)
 }
 
-fun AppState.resetToday(): AppState = copy(water = emptyList(), protein = emptyList())
+fun AppState.resetToday(): AppState = copy(water = emptyList(), protein = emptyList(), kcal = emptyList())
 
 const val STEP_GOAL_MAX = 50000
+const val KCAL_GOAL_MIN = 800
+const val KCAL_GOAL_MAX = 6000
+/** Most calories one "+ kcal" entry may add, and a day may hold. */
+const val KCAL_ENTRY_MAX = 5000
+const val KCAL_DAY_MAX = 20000
+
+/** Adds calories to today, keeping the day within a sensible limit. */
+fun AppState.addKcal(amount: Int): AppState {
+    val add = minOf(amount, KCAL_DAY_MAX - kcalTotal)
+    return if (add <= 0) this else copy(kcal = kcal + Store.newEntry(add))
+}
 const val STEP_DAY_MAX = 100000
 
 /** At most this many steps a minute are believed (fast running is about 200). */
@@ -249,7 +268,7 @@ object Store {
     private var savedDays: Map<String, DayRecord>? = null
 
     /** Lists and the day log live in their own tables; everything else is a settings row. */
-    private val TABLE_KEYS = setOf("water", "protein", "history", "foods")
+    private val TABLE_KEYS = setOf("water", "protein", "kcal", "history", "foods")
 
     private fun readDb(context: Context): AppState? {
         val db = SipDatabase.get(context).writableDatabase
@@ -264,28 +283,34 @@ object Store {
         val date = o.optString("date", LocalDate.now().toString())
         val water = JSONArray()
         val protein = JSONArray()
+        val kcal = JSONArray()
         db.query("entry", arrayOf("id", "kind", "time", "amount"), "date = ?", arrayOf(date), null, null, "id").use { c ->
             while (c.moveToNext()) {
                 val e = JSONObject().put("id", c.getLong(0)).put("t", c.getString(2)).put("a", c.getInt(3))
-                if (c.getString(1) == "water") water.put(e) else protein.put(e)
+                when (c.getString(1)) {
+                    "water" -> water.put(e)
+                    "kcal" -> kcal.put(e)
+                    else -> protein.put(e)
+                }
             }
         }
         val hist = JSONObject()
         val days = mutableMapOf<String, DayRecord>()
         db.query(
-            "day", arrayOf("date", "water", "protein", "water_goal", "protein_goal", "met", "steps", "step_goal", "step_met"),
+            "day", arrayOf("date", "water", "protein", "water_goal", "protein_goal", "met", "steps", "step_goal", "step_met", "kcal", "kcal_goal"),
             null, null, null, null, "date"
         ).use { c ->
             while (c.moveToNext()) {
                 val r = DayRecord(
                     c.getInt(1), c.getInt(2), c.getInt(3), c.getInt(4), c.getInt(5) == 1,
-                    c.getInt(6), c.getInt(7), c.getInt(8) == 1
+                    c.getInt(6), c.getInt(7), c.getInt(8) == 1, c.getInt(9), c.getInt(10)
                 )
                 days[c.getString(0)] = r
                 hist.put(
                     c.getString(0),
                     JSONObject().put("w", r.water).put("p", r.protein).put("wg", r.waterGoal).put("pg", r.proteinGoal)
                         .put("m", r.met).put("s", r.steps).put("sg", r.stepGoal).put("sm", r.stepMet)
+                        .put("k", r.kcal).put("kg", r.kcalGoal)
                 )
             }
         }
@@ -293,7 +318,7 @@ object Store {
         db.query("food", arrayOf("name", "grams"), null, null, null, null, "position").use { c ->
             while (c.moveToNext()) foods.put(JSONObject().put("n", c.getString(0)).put("g", c.getInt(1)))
         }
-        o.put("water", water).put("protein", protein).put("history", hist).put("foods", foods)
+        o.put("water", water).put("protein", protein).put("kcal", kcal).put("history", hist).put("foods", foods)
         savedDays = days
         return fromJson(o)
     }
@@ -323,6 +348,7 @@ object Store {
             }
             putEntries("water", s.water)
             putEntries("protein", s.protein)
+            putEntries("kcal", s.kcal)
 
             // Finished days: only rows that are new or changed.
             val before = savedDays
@@ -374,7 +400,9 @@ object Store {
             met = state.todayMet,
             steps = state.steps,
             stepGoal = state.stepGoal,
-            stepMet = state.stepsMet
+            stepMet = state.stepsMet,
+            kcal = state.kcalTotal,
+            kcalGoal = state.kcalGoal
         )
         val history = (state.history + (state.date to record))
             .toSortedMap()
@@ -383,7 +411,7 @@ object Store {
             .takeLast(400)
             .associate { it.key to it.value }
         return state.copy(
-            date = today, water = emptyList(), protein = emptyList(), history = history,
+            date = today, water = emptyList(), protein = emptyList(), kcal = emptyList(), history = history,
             steps = 0, stepBase = -1, stepPrior = 0
         )
     }
@@ -418,6 +446,7 @@ object Store {
                 JSONObject().put("w", r.water).put("p", r.protein)
                     .put("wg", r.waterGoal).put("pg", r.proteinGoal).put("m", r.met)
                     .put("s", r.steps).put("sg", r.stepGoal).put("sm", r.stepMet)
+                    .put("k", r.kcal).put("kg", r.kcalGoal)
             )
         }
         return JSONObject()
@@ -434,6 +463,9 @@ object Store {
             .put("date", s.date)
             .put("water", entriesToJson(s.water))
             .put("protein", entriesToJson(s.protein))
+            .put("kcal", entriesToJson(s.kcal))
+            .put("kcalGoal", s.kcalGoal)
+            .put("seenWhatsNew", s.seenWhatsNew)
             .put("history", hist)
             .put("themeMode", s.themeMode)
             .put("remindWater", s.remindWater)
@@ -472,7 +504,8 @@ object Store {
                 history[k] = if (rec != null) {
                     DayRecord(
                         rec.optInt("w"), rec.optInt("p"), rec.optInt("wg"), rec.optInt("pg"), rec.optBoolean("m"),
-                        rec.optInt("s"), rec.optInt("sg"), rec.optBoolean("sm")
+                        rec.optInt("s"), rec.optInt("sg"), rec.optBoolean("sm"),
+                        rec.optInt("k"), rec.optInt("kg")
                     )
                 } else {
                     // saves from version 1 only stored whether the day was a success
@@ -495,6 +528,9 @@ object Store {
             date = o.optString("date", def.date),
             water = entriesFromJson(o.optJSONArray("water")),
             protein = entriesFromJson(o.optJSONArray("protein")),
+            kcal = entriesFromJson(o.optJSONArray("kcal")),
+            kcalGoal = o.optInt("kcalGoal", def.kcalGoal).coerceIn(KCAL_GOAL_MIN, KCAL_GOAL_MAX),
+            seenWhatsNew = o.optInt("seenWhatsNew", 0),
             history = history,
             themeMode = o.optString("themeMode", def.themeMode),
             remindWater = o.optBoolean("remindWater", def.remindWater),

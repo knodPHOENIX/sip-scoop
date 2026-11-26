@@ -465,9 +465,20 @@ fun NoteBox(text: String, warning: Boolean) {
 fun Popup(
     onDismiss: () -> Unit,
     centered: Boolean = true,
+    /** False keeps the pop-up open: no cross, back or tapping outside does nothing. */
+    closable: Boolean = true,
+    /** Shown in the corner instead of the cross while [closable] is false. */
+    lockedCorner: (@Composable () -> Unit)? = null,
     content: @Composable ColumnScope.() -> Unit
 ) {
-    Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
+    Dialog(
+        onDismissRequest = { if (closable) onDismiss() },
+        properties = DialogProperties(
+            usePlatformDefaultWidth = false,
+            dismissOnBackPress = closable,
+            dismissOnClickOutside = closable
+        )
+    ) {
         GlassBlurBehind()
         Box(
             Modifier
@@ -490,14 +501,18 @@ fun Popup(
                 verticalArrangement = Arrangement.spacedBy(12.dp),
                 content = content
             )
-            SquishButton(
-                onClick = onDismiss,
-                background = C.Faint,
-                modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .padding(top = 12.dp, end = 12.dp),
-                contentPadding = PaddingValues(9.dp)
-            ) { LineIcon(Ic.CLOSE, C.Muted, 14.dp, 2.4f) }
+            if (closable) {
+                SquishButton(
+                    onClick = onDismiss,
+                    background = C.Faint,
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(top = 12.dp, end = 12.dp),
+                    contentPadding = PaddingValues(9.dp)
+                ) { LineIcon(Ic.CLOSE, C.Muted, 14.dp, 2.4f) }
+            } else if (lockedCorner != null) {
+                Box(Modifier.align(Alignment.TopEnd).padding(top = 12.dp, end = 12.dp)) { lockedCorner() }
+            }
         }
     }
 }

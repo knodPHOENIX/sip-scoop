@@ -92,7 +92,7 @@ fun AppRoot(
                 Onboarding(state) { name, age, avatar, water, protein, rings ->
                     update {
                         it.copy(
-                            onboarded = true, name = name, age = age, avatar = avatar,
+                            onboarded = true, seenWhatsNew = WHATS_NEW_VERSION, name = name, age = age, avatar = avatar,
                             waterGoal = water, proteinGoal = protein, since = it.date, ringsView = rings
                         )
                     }
@@ -230,6 +230,10 @@ fun MainScreen(
         }
         calendar?.let { kind ->
             StreakCalendarDialog(state, steps = kind == "steps") { calendar = null }
+        }
+        // Once, after updating: what's new in this version.
+        if (state.onboarded && state.seenWhatsNew < WHATS_NEW_VERSION) {
+            WhatsNewDialog { update { it.copy(seenWhatsNew = WHATS_NEW_VERSION) } }
         }
         AnimatedVisibility(
             visible = toast != null && page == HOME,

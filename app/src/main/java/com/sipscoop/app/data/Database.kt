@@ -31,7 +31,9 @@ class SipDatabase private constructor(context: Context) :
                 met INTEGER NOT NULL DEFAULT 0,
                 steps INTEGER NOT NULL DEFAULT 0,
                 step_goal INTEGER NOT NULL DEFAULT 0,
-                step_met INTEGER NOT NULL DEFAULT 0
+                step_met INTEGER NOT NULL DEFAULT 0,
+                kcal INTEGER NOT NULL DEFAULT 0,
+                kcal_goal INTEGER NOT NULL DEFAULT 0
             )
             """.trimIndent()
         )
@@ -54,6 +56,13 @@ class SipDatabase private constructor(context: Context) :
     override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
         // Each version adds its changes here, step by step, without touching existing data.
         if (oldVersion < 2) createStepTables(db)
+        if (oldVersion < 3) addCalorieColumns(db)
+    }
+
+    /** Version 3: each finished day also keeps its calories and calorie goal. */
+    private fun addCalorieColumns(db: SQLiteDatabase) {
+        runCatching { db.execSQL("ALTER TABLE day ADD COLUMN kcal INTEGER NOT NULL DEFAULT 0") }
+        runCatching { db.execSQL("ALTER TABLE day ADD COLUMN kcal_goal INTEGER NOT NULL DEFAULT 0") }
     }
 
     private fun createStepTables(db: SQLiteDatabase) {
@@ -83,7 +92,7 @@ class SipDatabase private constructor(context: Context) :
 
     companion object {
         private const val NAME = "sip_scoop.db"
-        private const val VERSION = 2
+        private const val VERSION = 3
 
         @Volatile private var instance: SipDatabase? = null
 
@@ -116,4 +125,6 @@ internal fun dayValues(date: String, r: DayRecord) = ContentValues().apply {
     put("steps", r.steps)
     put("step_goal", r.stepGoal)
     put("step_met", if (r.stepMet) 1 else 0)
+    put("kcal", r.kcal)
+    put("kcal_goal", r.kcalGoal)
 }
