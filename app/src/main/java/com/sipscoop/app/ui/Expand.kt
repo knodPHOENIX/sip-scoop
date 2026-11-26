@@ -39,6 +39,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.composed
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
@@ -76,14 +77,10 @@ object ChartDetail {
     val open = mutableStateOf<Pair<Track, Rect>?>(null)
 }
 
-/** Makes a chart card open its detailed view when tapped. */
-fun Modifier.opensChart(track: Track): Modifier = this.then(
-    Modifier.composedChartTap(track)
-)
-
-private fun Modifier.composedChartTap(track: Track): Modifier = androidx.compose.ui.composed {
+/** Makes a chart card open its detailed view when tapped (it remembers where the card is). */
+fun Modifier.opensChart(track: Track): Modifier = composed {
     var bounds by remember { mutableStateOf(Rect.Zero) }
-    this
+    Modifier
         .onGloballyPositioned { bounds = it.boundsInRoot() }
         .clickable(onClickLabel = "Open detailed chart") { ChartDetail.open.value = track to bounds }
 }
