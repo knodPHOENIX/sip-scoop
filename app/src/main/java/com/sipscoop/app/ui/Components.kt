@@ -83,7 +83,7 @@ fun Btn3D(
     border: Color = edge,
     enabled: Boolean = true,
     fill: Boolean = true,
-    radius: Dp = 16.dp,
+    radius: Dp = 18.dp,
     depth: Dp = 5.dp,
     minHeight: Dp = 0.dp,
     contentPadding: PaddingValues = PaddingValues(horizontal = 16.dp, vertical = 10.dp),
@@ -93,7 +93,7 @@ fun Btn3D(
     val interaction = remember { MutableInteractionSource() }
     val pressed by interaction.collectIsPressedAsState()
     val scale by animateFloatAsState(if (pressed && enabled) 0.97f else 1f, tween(110), label = "press")
-    val shape = RoundedCornerShape(minOf(radius, 14.dp))
+    val shape = RoundedCornerShape(radius)
     // A filled colour button gets a matching edge; an outlined one keeps its line colour.
     val line = if (border == edge && face != C.Surface && face != C.Faint && face != C.Bg) face else border
     Column(

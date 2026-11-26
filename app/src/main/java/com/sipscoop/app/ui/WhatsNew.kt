@@ -76,7 +76,7 @@ fun WhatsNewDialog(onDone: () -> Unit) {
         Column(Modifier.padding(top = 4.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
             NewItem(1, C.Gold, C.GoldText, "Smoother rings", "All three rings stay visible; the one you're on grows a little broader as you swipe.")
             NewItem(2, C.Blue, C.BlueDark, "Real numbers up front", "The chips under the rings show today's steps, water and protein instead of percentages.")
-            NewItem(3, C.Orange, C.OrangeText, "New calorie tracker", "Now on the Protein page. Food from search adds its calories; tap + kcal to type your own.")
+            NewItem(3, C.Orange, C.OrangeText, "New calorie tracker", "Now on the Diet page. Food from search adds its calories; tap + kcal to type your own.")
             NewItem(
                 4, C.pickColor(0xFF8A5CF6, 0xFFB48CFF), C.pickColor(0xFF6D3FD6, 0xFFC9ABFF),
                 "Detailed graph view", "Tap any graph to expand it: every day, week, month or year, with your averages and best days."

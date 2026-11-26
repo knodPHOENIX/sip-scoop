@@ -228,7 +228,7 @@ fun MainScreen(
                         NavTab("Water", pager.currentPage == 1, WaterAccent, Ic.DROP, modifier = Modifier.weight(1f)) {
                             scope.launch { pager.animateScrollToPage(1) }
                         }
-                        NavTab("Protein", pager.currentPage == 2, ProteinAccent, Ic.EGG, modifier = Modifier.weight(1f)) {
+                        NavTab("Diet", pager.currentPage == 2, ProteinAccent, Ic.EGG, modifier = Modifier.weight(1f)) {
                             scope.launch { pager.animateScrollToPage(2) }
                         }
                     }
@@ -340,13 +340,18 @@ fun Splash(onDone: () -> Unit) {
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Spacer(Modifier.weight(1f))
-            // The app icon the user picked, bobbing gently.
-            val icon = remember { AppIconSwitcher.current(context) }
+            // The liquid-glass DNA logo, bobbing gently.
             Box(
                 Modifier
                     .graphicsLayer { translationY = bob * 0.25f * density }
                     .shadow(18.dp, RoundedCornerShape(36.dp))
-            ) { AppIconPreview(icon, 156.dp) }
+            ) {
+                androidx.compose.foundation.Image(
+                    androidx.compose.ui.res.painterResource(com.sipscoop.app.R.drawable.logo_full),
+                    contentDescription = "Sip & Scoop logo",
+                    modifier = Modifier.size(156.dp).clip(RoundedCornerShape(36.dp))
+                )
+            }
             Spacer(Modifier.height(26.dp))
             Text("Sip & Scoop", style = T.display(40, Color(0xFFF2F4F7)))
             Text("Walk. Hydrate. Fuel up.", style = T.body(16, Color(0xFF8B93A1)))

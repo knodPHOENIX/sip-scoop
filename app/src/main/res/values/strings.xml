@@ -19,7 +19,7 @@
     <string name="widget_rings_small_desc">The rings with all three numbers</string>
     <string name="widget_water_name">Sip &amp; Scoop · water</string>
     <string name="widget_water_desc">Water today with two quick buttons</string>
-    <string name="widget_protein_name">Sip &amp; Scoop · protein</string>
+    <string name="widget_protein_name">Sip &amp; Scoop · diet</string>
     <string name="widget_protein_desc">Protein and calories today with two quick buttons</string>
     <string name="widget_steps_name">Sip &amp; Scoop · steps</string>
     <string name="widget_steps_desc">Steps today with distance and calories</string>

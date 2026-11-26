@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- The liquid-glass DNA logo (2.1.1). Every launcher entry uses it. -->
 <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
-    <background android:drawable="@drawable/ic_icon_navy_bg" />
-    <foreground android:drawable="@drawable/ic_icon_drip_fg" />
-    <monochrome android:drawable="@drawable/ic_icon_mono" />
+    <background android:drawable="@drawable/ic_logo_bg" />
+    <foreground android:drawable="@drawable/ic_logo_fg" />
+    <monochrome android:drawable="@drawable/ic_logo_mono" />
 </adaptive-icon>

@@ -67,8 +67,8 @@ private fun AppState.fraction(i: Int, stepsOn: Boolean): Float {
 
 /**
  * One set of three rings for steps (outside), water and protein (inside).
- * All three rings are always shown in full colour; the one for the page you're on is a
- * little broader, and the widths glide as you swipe. Tap a ring to jump to its page.
+ * The ring for the page you're on is thick and bright, the other two are faded; it glides
+ * as you swipe. Tap a ring to jump to its page.
  * The rings fill up from empty every time this view appears.
  */
 @Composable
@@ -112,9 +112,9 @@ fun SharedRings(state: AppState, position: Float, stepsOn: Boolean, onPick: (Int
             val c = Offset(size.width / 2f, size.height / 2f)
             for (i in 0..2) {
                 val near = (1f - abs(position - i)).coerceIn(0f, 1f)
-                // Subtle but clear: about 14 vs 9 on a 220 wide set of rings.
-                val w = side * (0.041f + 0.023f * near)
-                val alpha = 1f
+                // The ring of the page you're on is thick and bright; the other two are faded.
+                val w = side * (0.064f + 0.021f * near)
+                val alpha = 0.28f + 0.72f * near
                 val r = radius[i] * side
                 val tl = Offset(c.x - r, c.y - r)
                 val sz = Size(r * 2, r * 2)

@@ -197,7 +197,8 @@ fun TrackerScreen(
             .padding(start = 20.dp, end = 20.dp, top = if (compact) 0.dp else 6.dp, bottom = 18.dp),
         verticalArrangement = Arrangement.spacedBy(if (compact) 12.dp else 16.dp)
     ) {
-        Row(
+        // Rings view on the Diet page: no tip bubble, so calories, buttons and foods sit higher.
+        if (!(compact && !isWater)) Row(
             verticalAlignment = if (compact) Alignment.CenterVertically else Alignment.Bottom,
             horizontalArrangement = Arrangement.spacedBy(10.dp)
         ) {
@@ -278,7 +279,7 @@ fun TrackerScreen(
             }
         }
 
-        // Protein page: today's calories, from food search or typed in.
+        // Diet page: today's calories, from food search or typed in.
         if (!isWater) {
             CalorieBar(
                 total = state.kcalTotal,
@@ -653,7 +654,7 @@ private fun EditTotalButton(accent: Accent, onClick: () -> Unit) {
 
 /** A small nudge that the next screen is one swipe away. */
 @Composable
-fun SwipeHint(text: String = "Swipe for protein", arrangement: Arrangement.Horizontal = Arrangement.End, modifier: Modifier = Modifier) {
+fun SwipeHint(text: String = "Swipe for diet", arrangement: Arrangement.Horizontal = Arrangement.End, modifier: Modifier = Modifier) {
     val inf = rememberInfiniteTransition(label = "hint")
     val dx by inf.animateFloat(0f, -8f, infiniteRepeatable(tween(800, easing = FastOutSlowInEasing), RepeatMode.Reverse), label = "dx")
     Row(

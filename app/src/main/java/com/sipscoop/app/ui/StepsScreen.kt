@@ -202,7 +202,7 @@ private fun StepsToday(state: AppState, update: ((AppState) -> AppState) -> Unit
 
         if (compact) {
             // Rings view: the chart comes first (a little shorter), then the day picker.
-            ActivityChart(state, hours, back, day, chartHeight = 112.dp)
+            ActivityChart(state, hours, back, day, chartHeight = 50.dp, compact = true)
             DayPicker(today, back) { back = it }
         } else {
             DayPicker(today, back) { back = it }
@@ -297,7 +297,7 @@ private fun FactTile(modifier: Modifier, value: String, label: String) {
     Column(
         modifier
             .glass(RoundedCornerShape(16.dp), tint = C.Gold)
-            .padding(vertical = 10.dp, horizontal = 4.dp),
+            .padding(vertical = 8.dp, horizontal = 4.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(value, style = T.display(18, C.GoldText), maxLines = 1)
@@ -359,7 +359,13 @@ private fun DayPicker(today: LocalDate, back: Int, onPick: (Int) -> Unit) {
 
 /** Steps by hour (when you walked) or the last 7 days. Tap an hour to see its number. */
 @Composable
-private fun ActivityChart(state: AppState, hours: IntArray, back: Int, day: LocalDate, chartHeight: androidx.compose.ui.unit.Dp = 140.dp) {
+private fun ActivityChart(
+    state: AppState, hours: IntArray, back: Int, day: LocalDate,
+    chartHeight: androidx.compose.ui.unit.Dp = 140.dp,
+    // Rings view: no hour strip and no legend, so the chart and the day picker both fit.
+    // A tapped hour shows its steps in the title instead.
+    compact: Boolean = false
+) {
     var byHour by remember { mutableStateOf(true) }
     // Show from 6 AM, or earlier if there were steps earlier.
     val first = minOf(6, hours.indexOfFirst { it > 0 }.takeIf { it >= 0 } ?: 6)
@@ -377,9 +383,13 @@ private fun ActivityChart(state: AppState, hours: IntArray, back: Int, day: Loca
         verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            val showPick = compact && byHour && picked in range
             Text(
-                if (!byHour) "This week" else if (back == 0) "Today by hour" else "${shortDay(day)} by hour",
-                style = T.bold(15), modifier = Modifier.weight(1f)
+                if (showPick) "${hourLabel(sel)} · ${fmt(hours[sel])} steps"
+                else if (!byHour) "This week" else if (back == 0) "Today by hour" else "${shortDay(day)} by hour",
+                style = T.bold(15, if (showPick) C.GoldText else C.Ink), maxLines = 1,
+                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f)
             )
             Row(Modifier.glass(CircleShape).padding(3.dp)) {
                 listOf(true to "By hour", false to "Week").forEach { (v, label) ->
@@ -398,7 +408,7 @@ private fun ActivityChart(state: AppState, hours: IntArray, back: Int, day: Loca
             }
         }
         if (byHour) {
-            Box(
+            if (!compact) Box(
                 Modifier
                     .fillMaxWidth()
                     .glass(RoundedCornerShape(12.dp), tint = C.Gold)
@@ -437,7 +447,7 @@ private fun ActivityChart(state: AppState, hours: IntArray, back: Int, day: Loca
                                 .fillMaxWidth()
                                 .fillMaxHeight((v.toFloat() / top).coerceIn(0.03f, 1f) * grow)
                                 .background(color, RoundedCornerShape(topStart = 5.dp, topEnd = 5.dp, bottomStart = 2.dp, bottomEnd = 2.dp))
-                                .then(if (h == sel) Modifier.border(1.dp, C.GoldText, RoundedCornerShape(5.dp)) else Modifier)
+                                .then(if (h == sel && (!compact || picked in range)) Modifier.border(1.dp, C.GoldText, RoundedCornerShape(5.dp)) else Modifier)
                         )
                     }
                 }
@@ -447,12 +457,12 @@ private fun ActivityChart(state: AppState, hours: IntArray, back: Int, day: Loca
                     Text(hourLabel(it), style = T.bold(11, C.Muted))
                 }
             }
-            Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+            if (!compact) Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
                 Legend(C.Gold, "Hours with a walk (500+)")
                 Legend(C.GoldIdle, "Light moving")
             }
         } else {
-            WeekBars(state, Track.STEPS, "Last 7 days", Modifier.fillMaxWidth().height(220.dp), showNumbers = true)
+            WeekBars(state, Track.STEPS, "Last 7 days", Modifier.fillMaxWidth().height(if (compact) 150.dp else 220.dp), showNumbers = true)
         }
     }
 }

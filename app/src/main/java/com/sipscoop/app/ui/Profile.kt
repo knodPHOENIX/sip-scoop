@@ -521,8 +521,6 @@ fun AppearanceScreen(
             }
         }
 
-        SectionLabel("App icon")
-        AppIconPicker()
     }
 }
 
