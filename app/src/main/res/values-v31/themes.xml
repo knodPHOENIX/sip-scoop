@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Android 12+: the system's launch screen is plain dark with no icon, so it flows
+         straight into the app's own DNA → rings opening animation (no blue flash). -->
+    <style name="Theme.SipScoop" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@color/intro_dark</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowSplashScreenBackground">@color/intro_dark</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@android:color/transparent</item>
+        <item name="android:windowSplashScreenIconBackgroundColor">@color/intro_dark</item>
+    </style>
+</resources>

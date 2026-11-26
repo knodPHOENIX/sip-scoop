@@ -135,9 +135,6 @@ fun MainScreen(
     onAskSteps: () -> Unit
 ) {
     var page by rememberSaveable { mutableIntStateOf(HOME) }
-    // The page before and the page now, to know when Home ↔ Profile is happening.
-    val lastPages = remember { intArrayOf(HOME, HOME) }
-    if (lastPages[1] != page) { lastPages[0] = lastPages[1]; lastPages[1] = page }
     var calendar by remember { mutableStateOf<String?>(null) }
     // Water or protein chip held: it grows into its edit menu.
     var chipMenu by remember { mutableStateOf<Pair<Int, androidx.compose.ui.geometry.Rect>?>(null) }
@@ -164,56 +161,23 @@ fun MainScreen(
             .pageBackground()
             .windowInsetsPadding(WindowInsets.safeDrawing)
     ) {
-        // Home ↔ Profile opens and closes as a circle from the profile picture; other pages slide.
-        val circleHop = (lastPages[0] == HOME && lastPages[1] == PROFILE) || (lastPages[0] == PROFILE && lastPages[1] == HOME)
         AnimatedContent(
             targetState = page,
             transitionSpec = {
-                val hop = (initialState == HOME && targetState == PROFILE) || (initialState == PROFILE && targetState == HOME)
-                if (hop) {
-                    (EnterTransition.None togetherWith ExitTransition.None).apply {
-                        // Profile stays on top both ways: it grows over Home, then shrinks off it.
-                        targetContentZIndex = if (targetState == PROFILE) 1f else -1f
-                    }
-                } else {
-                    val forward = targetState > initialState
-                    (slideInHorizontally(tween(380)) { w -> if (forward) w / 3 else -w / 3 } + fadeIn(tween(380))) togetherWith
-                        (slideOutHorizontally(tween(280)) { w -> if (forward) -w / 3 else w / 3 } + fadeOut(tween(200)))
-                }
+                val forward = targetState > initialState
+                (slideInHorizontally(tween(380)) { w -> if (forward) w / 3 else -w / 3 } + fadeIn(tween(380))) togetherWith
+                    (slideOutHorizontally(tween(280)) { w -> if (forward) -w / 3 else w / 3 } + fadeOut(tween(200)))
             },
             label = "pages"
         ) { p ->
             when (p) {
-                PROFILE -> {
-                    val reveal by transition.animateFloat(
-                        transitionSpec = { tween(460, easing = FastOutSlowInEasing) },
-                        label = "profileReveal"
-                    ) { if (it == EnterExitState.Visible) 1f else 0f }
-                    var me by remember { mutableStateOf(Rect.Zero) }
-                    Box(
-                        Modifier
-                            .fillMaxSize()
-                            .onGloballyPositioned { me = it.boundsInRoot() }
-                            .graphicsLayer {
-                                val a = ProfileOrigin.rect.value
-                                if (circleHop && a.width > 0f) {
-                                    val c = a.center - me.topLeft
-                                    val far = kotlin.math.hypot(maxOf(c.x, size.width - c.x), maxOf(c.y, size.height - c.y))
-                                    val r = a.width / 2f + (far - a.width / 2f) * reveal
-                                    shape = CircleReveal(c, r)
-                                    clip = true
-                                }
-                            }
-                    ) {
-                        ProfileScreen(
-                            state, update,
-                            onBack = { page = HOME },
-                            onAppearance = { page = APPEARANCE },
-                            onNotifications = { page = NOTIFICATIONS },
-                            onHistory = { page = HISTORY }
-                        )
-                    }
-                }
+                PROFILE -> ProfileScreen(
+                    state, update,
+                    onBack = { page = HOME },
+                    onAppearance = { page = APPEARANCE },
+                    onNotifications = { page = NOTIFICATIONS },
+                    onHistory = { page = HISTORY }
+                )
                 APPEARANCE -> AppearanceScreen(state, update, onBack = { page = PROFILE })
                 NOTIFICATIONS -> NotificationsScreen(state, update, onBack = { page = PROFILE }, onNeedNotificationPermission = onNeedNotificationPermission)
                 HISTORY -> HistoryScreen(state, onBack = { page = PROFILE })

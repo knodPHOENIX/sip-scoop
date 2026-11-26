@@ -33,4 +33,6 @@
     <color name="widget_track">#140F1318</color>
     <color name="widget_streak_fill">#1A2F80ED</color>
     <color name="widget_streak_edge">#552F80ED</color>
+    <!-- Behind the opening animation: the same dark as its first frame, so nothing flashes. -->
+    <color name="intro_dark">#0B0D10</color>
 </resources>
