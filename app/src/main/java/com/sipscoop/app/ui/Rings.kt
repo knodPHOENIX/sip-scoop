@@ -33,6 +33,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.geometry.Offset
@@ -78,7 +79,8 @@ fun SharedRings(state: AppState, position: Float, stepsOn: Boolean, onPick: (Int
     val radius = listOf(0.441f, 0.339f, 0.237f)
 
     val fills = (0..2).map { i ->
-        var started by remember { mutableStateOf(false) }
+        // During the opening animation the rings are already drawn full, so start at today's value.
+        var started by remember { mutableStateOf(Intro.active.value) }
         LaunchedEffect(Unit) {
             delay(180L * i)
             started = true
@@ -88,9 +90,14 @@ fun SharedRings(state: AppState, position: Float, stepsOn: Boolean, onPick: (Int
     }
 
     val current = position.coerceIn(0f, 2f).let { kotlin.math.round(it).toInt() }
+    val ringView = androidx.compose.ui.platform.LocalView.current
 
     Box(
-        modifier.semantics { contentDescription = "Progress rings. Tap a ring to open steps, water or protein." },
+        modifier
+            .onGloballyPositioned { Intro.ringBounds.value = it.boundsInRoot() }
+            // Hidden while the opening animation draws its own rings on top.
+            .graphicsLayer { alpha = if (Intro.handedOver.value) 1f else 0f }
+            .semantics { contentDescription = "Progress rings. Tap a ring to open steps, water or diet." },
         contentAlignment = Alignment.Center
     ) {
         Canvas(
@@ -104,7 +111,7 @@ fun SharedRings(state: AppState, position: Float, stepsOn: Boolean, onPick: (Int
                         // A touch area a bit wider than the visible ring, so it's easy to hit.
                         val reach = side * 0.06f + 8.dp.toPx()
                         val hit = radius.indices.minByOrNull { abs(dist - radius[it] * side) }
-                        if (hit != null && abs(dist - radius[hit] * side) <= reach) onPick(hit)
+                        if (hit != null && abs(dist - radius[hit] * side) <= reach) { Haptics.tap(ringView); onPick(hit) }
                     }
                 }
         ) {
@@ -155,6 +162,7 @@ fun RingChips(
     onPick: (Int) -> Unit
 ) {
     val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
+    val view = androidx.compose.ui.platform.LocalView.current
     val current = kotlin.math.round(position.coerceIn(0f, 2f)).toInt()
     val names = listOf("Steps", "Water", "Protein")
     val dots = listOf(C.Gold, C.Blue, C.Orange)
@@ -184,7 +192,7 @@ fun RingChips(
                     .clip(CircleShape)
                     .pointerInput(i) {
                         detectTapGestures(
-                            onTap = { onPick(i) },
+                            onTap = { Haptics.tap(view); onPick(i) },
                             // Water and protein: hold to open their edits (the chip grows open).
                             onLongPress = {
                                 if (i > 0) {

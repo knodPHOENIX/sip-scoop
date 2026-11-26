@@ -1,5 +1,10 @@
 package com.sipscoop.app.ui
 
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.Dispatchers
@@ -152,13 +157,17 @@ private fun Card(content: @Composable ColumnScope.() -> Unit) {
 
 @Composable
 fun Toggle(on: Boolean, label: String, onChange: (Boolean) -> Unit) {
+    val view = androidx.compose.ui.platform.LocalView.current
     val track by animateColorAsState(if (on) C.Green else C.Line, tween(220), label = "track")
     val knob by animateDpAsState(if (on) 23.dp else 3.dp, spring(dampingRatio = 0.6f, stiffness = Spring.StiffnessMedium), label = "knob")
     Box(
         Modifier
             .size(50.dp, 30.dp)
             .background(track, CircleShape)
-            .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, onClickLabel = label) { onChange(!on) }
+            .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, onClickLabel = label) {
+                Haptics.tap(view)
+                onChange(!on)
+            }
     ) {
         Box(
             Modifier
@@ -521,6 +530,125 @@ fun AppearanceScreen(
             }
         }
 
+        SectionLabel("Text size")
+        TextSizeCard(state, update)
+        Text(
+            "Changes every screen and pop-up in the app. Widgets and notifications follow the phone.",
+            style = T.body(12, C.Muted), textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth()
+        )
+    }
+}
+
+private val TEXT_SIZES = listOf("Smaller" to 0.85f, "Small" to 0.92f, "Default" to 1f, "Large" to 1.1f, "Larger" to 1.2f)
+
+/** Appearance → Text size: a 5-step bar, a live preview, and a switch to use the phone's size instead. */
+@Composable
+private fun TextSizeCard(state: AppState, update: ((AppState) -> AppState) -> Unit) {
+    val phone = androidx.compose.ui.platform.LocalConfiguration.current.fontScale
+    val follow = state.followPhoneText
+    val index = TEXT_SIZES.indices.minByOrNull { kotlin.math.abs(TEXT_SIZES[it].second - state.textScale) } ?: 2
+    val view = androidx.compose.ui.platform.LocalView.current
+    fun pick(i: Int) {
+        val v = TEXT_SIZES[i.coerceIn(0, TEXT_SIZES.lastIndex)].second
+        if (v != state.textScale || follow) {
+            Haptics.tick(view)
+            update { it.copy(textScale = v, followPhoneText = false) }
+        }
+    }
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .glass(RoundedCornerShape(20.dp))
+            .padding(horizontal = 14.dp, vertical = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(14.dp)
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text("Text size", style = T.bold(16), modifier = Modifier.weight(1f))
+            Text(
+                if (follow) "Phone · ${(phone * 100).toInt()}%" else "${TEXT_SIZES[index].first} · ${(TEXT_SIZES[index].second * 100).toInt()}%",
+                style = T.bold(14, C.BlueDark)
+            )
+        }
+        // Live preview: the whole app already uses the new size, so this just shows it.
+        Column(
+            Modifier
+                .fillMaxWidth()
+                .background(C.Faint, RoundedCornerShape(16.dp))
+                .border(1.dp, C.Line, RoundedCornerShape(16.dp))
+                .padding(14.dp),
+            verticalArrangement = Arrangement.spacedBy(2.dp)
+        ) {
+            Text("Good afternoon,", style = T.body(13, C.Muted))
+            Text(state.firstName.ifBlank { "there" }, style = T.display(21))
+            Text("Step goal smashed! ${fmt(state.steps)} steps today.", style = T.body(15), modifier = Modifier.padding(top = 4.dp))
+        }
+        // The bar: tap or drag to one of five steps.
+        val alpha = if (follow) 0.45f else 1f
+        Row(
+            Modifier.fillMaxWidth().graphicsLayer { this.alpha = alpha },
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(14.dp)
+        ) {
+            Text("A", style = T.bold(14, C.Muted))
+            // The latest pick, so a drag keeps working while the size changes under it.
+            val onPick = androidx.compose.runtime.rememberUpdatedState<(Int) -> Unit> { i -> pick(i) }
+            var widthPx by remember { mutableFloatStateOf(1f) }
+            val pos by animateFloatAsState(index / 4f, spring(dampingRatio = 0.7f, stiffness = Spring.StiffnessMedium), label = "textSize")
+            Box(
+                Modifier
+                    .weight(1f)
+                    .height(30.dp)
+                    .onSizeChanged { widthPx = it.width.toFloat().coerceAtLeast(1f) }
+                    .pointerInput(Unit) {
+                        detectTapGestures { o -> onPick.value(kotlin.math.round(o.x / widthPx * 4f).toInt()) }
+                    }
+                    .pointerInput(Unit) {
+                        detectHorizontalDragGestures { change, _ -> onPick.value(kotlin.math.round(change.position.x / widthPx * 4f).toInt()) }
+                    },
+                contentAlignment = Alignment.CenterStart
+            ) {
+                Box(Modifier.fillMaxWidth().height(6.dp).background(C.Line, CircleShape))
+                Box(Modifier.fillMaxWidth(pos.coerceIn(0.001f, 1f)).height(6.dp).background(C.Blue, CircleShape))
+                androidx.compose.foundation.layout.BoxWithConstraints(Modifier.fillMaxWidth().height(30.dp)) {
+                    val w = maxWidth
+                    for (i in 0..4) {
+                        Box(
+                            Modifier
+                                .offset(x = w * (i / 4f) - 4.dp, y = 11.dp)
+                                .size(8.dp)
+                                .background(if (i / 4f <= pos + 0.001f) Color.White else C.Muted.copy(alpha = 0.5f), CircleShape)
+                        )
+                    }
+                    Box(
+                        Modifier
+                            .offset(x = w * pos - 13.dp, y = 2.dp)
+                            .size(26.dp)
+                            .shadow(4.dp, CircleShape)
+                            .background(Color.White, CircleShape)
+                    )
+                }
+            }
+            Text("A", style = T.bold(24, C.Muted))
+        }
+        Row(Modifier.fillMaxWidth().padding(start = 22.dp, end = 30.dp).graphicsLayer { this.alpha = alpha }) {
+            TEXT_SIZES.forEachIndexed { i, (name, _) ->
+                Text(
+                    name, style = T.bold(11, if (i == index && !follow) C.Ink else C.Muted),
+                    textAlign = TextAlign.Center, maxLines = 1, modifier = Modifier.weight(1f)
+                )
+            }
+        }
+        Box(Modifier.fillMaxWidth().height(1.dp).background(C.Line))
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            Column(Modifier.weight(1f)) {
+                Text("Follow phone's text size", style = T.bold(15))
+                Text(
+                    "Your phone is set to ${(phone * 100).toInt()}%. Off: the app keeps its own size, so nothing gets cut off.",
+                    style = T.body(12, C.Muted)
+                )
+            }
+            Toggle(follow, "Follow phone's text size") { on -> update { it.copy(followPhoneText = on) } }
+        }
     }
 }
 

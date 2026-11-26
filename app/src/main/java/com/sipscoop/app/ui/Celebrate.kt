@@ -143,12 +143,14 @@ fun CelebrationLayer(state: AppState) {
     var bannerKey by remember { mutableIntStateOf(0) }
     var showBoth by remember { mutableStateOf(false) }
     val haptic = LocalHapticFeedback.current
+    val view = androidx.compose.ui.platform.LocalView.current
 
     LaunchedEffect(waterDone, proteinDone) {
         val justWater = prevWater == false && waterDone
         val justProtein = prevProtein == false && proteinDone
         if (justWater || justProtein) {
-            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+            // A ring closed: two quick firm pulses.
+            Haptics.celebrate(view)
             if (waterDone && proteinDone) {
                 banner = null
                 showBoth = true
@@ -162,7 +164,7 @@ fun CelebrationLayer(state: AppState) {
     }
     LaunchedEffect(stepsDone) {
         if (prevSteps == false && stepsDone) {
-            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+            Haptics.celebrate(view)
             banner = "steps"
             bannerKey++
         }

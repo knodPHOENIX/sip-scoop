@@ -1,5 +1,10 @@
 package com.sipscoop.app.ui
 
+import androidx.compose.ui.layout.boundsInRoot
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.EnterExitState
 import kotlinx.coroutines.delay
 import androidx.compose.foundation.border
 import androidx.compose.animation.slideOutVertically
@@ -63,6 +68,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.Density
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.runtime.CompositionLocalProvider
 import com.sipscoop.app.data.AppState
 import com.sipscoop.app.steps.StepStatus
 import kotlinx.coroutines.launch
@@ -75,19 +84,23 @@ fun AppRoot(
     stepStatus: StepStatus = StepStatus.NO_SENSOR,
     onAskSteps: () -> Unit = {}
 ) {
-    var splashDone by rememberSaveable { mutableStateOf(false) }
-    val screen = when {
-        !splashDone -> 0
-        !state.onboarded -> 1
-        else -> 2
-    }
+    // The opening animation runs once per launch (not again when the screen rotates).
+    var introDone by rememberSaveable { mutableStateOf(false) }
+    remember { if (introDone) Intro.finish() else Intro.reset(); 0 }
+    val screen = if (!state.onboarded) 1 else 2
+
+    // Text size: the app's own size (Appearance → Text size), or the phone's if the user asked for that.
+    val base = LocalDensity.current
+    val phoneScale = LocalConfiguration.current.fontScale
+    val scale = if (state.followPhoneText) phoneScale else state.textScale
+    CompositionLocalProvider(LocalDensity provides Density(base.density, scale)) {
+    Box(Modifier.fillMaxSize()) {
     AnimatedContent(
         targetState = screen,
         transitionSpec = { fadeIn(tween(450)) togetherWith fadeOut(tween(300)) },
         label = "root"
     ) { s ->
         when (s) {
-            0 -> Splash { splashDone = true }
             1 -> Box(Modifier.fillMaxSize().pageBackground().windowInsetsPadding(WindowInsets.safeDrawing)) {
                 Onboarding(state) { name, age, avatar, water, protein, rings ->
                     update {
@@ -100,6 +113,9 @@ fun AppRoot(
             }
             else -> MainScreen(state, update, onNeedNotificationPermission, stepStatus, onAskSteps)
         }
+    }
+    if (!introDone) IntroOverlay(state, stepStatus == StepStatus.ON) { introDone = true }
+    }
     }
 }
 
@@ -119,6 +135,9 @@ fun MainScreen(
     onAskSteps: () -> Unit
 ) {
     var page by rememberSaveable { mutableIntStateOf(HOME) }
+    // The page before and the page now, to know when Home ↔ Profile is happening.
+    val lastPages = remember { intArrayOf(HOME, HOME) }
+    if (lastPages[1] != page) { lastPages[0] = lastPages[1]; lastPages[1] = page }
     var calendar by remember { mutableStateOf<String?>(null) }
     // Water or protein chip held: it grows into its edit menu.
     var chipMenu by remember { mutableStateOf<Pair<Int, androidx.compose.ui.geometry.Rect>?>(null) }
@@ -145,23 +164,56 @@ fun MainScreen(
             .pageBackground()
             .windowInsetsPadding(WindowInsets.safeDrawing)
     ) {
+        // Home ↔ Profile opens and closes as a circle from the profile picture; other pages slide.
+        val circleHop = (lastPages[0] == HOME && lastPages[1] == PROFILE) || (lastPages[0] == PROFILE && lastPages[1] == HOME)
         AnimatedContent(
             targetState = page,
             transitionSpec = {
-                val forward = targetState > initialState
-                (slideInHorizontally(tween(380)) { w -> if (forward) w / 3 else -w / 3 } + fadeIn(tween(380))) togetherWith
-                    (slideOutHorizontally(tween(280)) { w -> if (forward) -w / 3 else w / 3 } + fadeOut(tween(200)))
+                val hop = (initialState == HOME && targetState == PROFILE) || (initialState == PROFILE && targetState == HOME)
+                if (hop) {
+                    (EnterTransition.None togetherWith ExitTransition.None).apply {
+                        // Profile stays on top both ways: it grows over Home, then shrinks off it.
+                        targetContentZIndex = if (targetState == PROFILE) 1f else -1f
+                    }
+                } else {
+                    val forward = targetState > initialState
+                    (slideInHorizontally(tween(380)) { w -> if (forward) w / 3 else -w / 3 } + fadeIn(tween(380))) togetherWith
+                        (slideOutHorizontally(tween(280)) { w -> if (forward) -w / 3 else w / 3 } + fadeOut(tween(200)))
+                }
             },
             label = "pages"
         ) { p ->
             when (p) {
-                PROFILE -> ProfileScreen(
-                    state, update,
-                    onBack = { page = HOME },
-                    onAppearance = { page = APPEARANCE },
-                    onNotifications = { page = NOTIFICATIONS },
-                    onHistory = { page = HISTORY }
-                )
+                PROFILE -> {
+                    val reveal by transition.animateFloat(
+                        transitionSpec = { tween(460, easing = FastOutSlowInEasing) },
+                        label = "profileReveal"
+                    ) { if (it == EnterExitState.Visible) 1f else 0f }
+                    var me by remember { mutableStateOf(Rect.Zero) }
+                    Box(
+                        Modifier
+                            .fillMaxSize()
+                            .onGloballyPositioned { me = it.boundsInRoot() }
+                            .graphicsLayer {
+                                val a = ProfileOrigin.rect.value
+                                if (circleHop && a.width > 0f) {
+                                    val c = a.center - me.topLeft
+                                    val far = kotlin.math.hypot(maxOf(c.x, size.width - c.x), maxOf(c.y, size.height - c.y))
+                                    val r = a.width / 2f + (far - a.width / 2f) * reveal
+                                    shape = CircleReveal(c, r)
+                                    clip = true
+                                }
+                            }
+                    ) {
+                        ProfileScreen(
+                            state, update,
+                            onBack = { page = HOME },
+                            onAppearance = { page = APPEARANCE },
+                            onNotifications = { page = NOTIFICATIONS },
+                            onHistory = { page = HISTORY }
+                        )
+                    }
+                }
                 APPEARANCE -> AppearanceScreen(state, update, onBack = { page = PROFILE })
                 NOTIFICATIONS -> NotificationsScreen(state, update, onBack = { page = PROFILE }, onNeedNotificationPermission = onNeedNotificationPermission)
                 HISTORY -> HistoryScreen(state, onBack = { page = PROFILE })
@@ -176,9 +228,10 @@ fun MainScreen(
                 else -> {
                     val pos = pager.currentPage + pager.currentPageOffsetFraction
                     val rings = state.ringsView
+                    val ringFactor = 1f - (LocalDensity.current.fontScale - 1f).coerceIn(0f, 0.2f) * 0.6f
                     Column(Modifier.fillMaxSize()) {
                     // Fixed top: greeting, streaks and profile stay put while the pages slide.
-                    Box(Modifier.padding(start = 20.dp, end = 20.dp, top = 14.dp, bottom = 4.dp)) {
+                    Box(Modifier.introIn(1300f, 1750f, (-18).dp).padding(start = 20.dp, end = 20.dp, top = 14.dp, bottom = 4.dp)) {
                         GreetingHeader(
                             state.firstName, state.stepStreak, state.streak, state.avatar,
                             onStepStreak = { calendar = "steps" },
@@ -191,10 +244,12 @@ fun MainScreen(
                             SharedRings(
                                 state, pos, stepStatus == StepStatus.ON,
                                 onPick = { i -> scope.launch { pager.animateScrollToPage(i) } },
-                                modifier = Modifier.size(220.dp)
+                                // A little smaller at big text sizes, so the page below still fits.
+                                modifier = Modifier.size(220.dp * ringFactor)
                             )
                         }
                         Spacer(Modifier.height(6.dp))
+                        Box(Modifier.introIn(1380f, 1820f, 22.dp)) {
                         RingChips(
                             state, pos, stepStatus == StepStatus.ON,
                             onHold = { i, r ->
@@ -202,11 +257,12 @@ fun MainScreen(
                                 scope.launch { pager.animateScrollToPage(i) }
                             }
                         ) { i -> scope.launch { pager.animateScrollToPage(i) } }
+                        }
                         Spacer(Modifier.height(10.dp))
                     } else {
-                        PageDots(pos)
+                        Box(Modifier.introIn(1380f, 1820f, 22.dp)) { PageDots(pos) }
                     }
-                    Box(Modifier.weight(1f)) {
+                    Box(Modifier.weight(1f).introIn(1450f, 1950f, 40.dp)) {
                         HorizontalPager(state = pager, beyondViewportPageCount = 1) { t ->
                             when (t) {
                                 0 -> StepsScreen(state, update, stepStatus, onAskSteps, compact = rings)
@@ -215,6 +271,7 @@ fun MainScreen(
                             }
                         }
                     }
+                    Column(Modifier.introIn(1500f, 1950f, 60.dp)) {
                     Box(Modifier.fillMaxWidth().height(2.dp).background(C.NavLine))
                     Row(
                         Modifier
@@ -228,9 +285,10 @@ fun MainScreen(
                         NavTab("Water", pager.currentPage == 1, WaterAccent, Ic.DROP, modifier = Modifier.weight(1f)) {
                             scope.launch { pager.animateScrollToPage(1) }
                         }
-                        NavTab("Diet", pager.currentPage == 2, ProteinAccent, Ic.EGG, modifier = Modifier.weight(1f)) {
+                        NavTab("Diet", pager.currentPage == 2, ProteinAccent, Ic.CUTLERY, modifier = Modifier.weight(1f)) {
                             scope.launch { pager.animateScrollToPage(2) }
                         }
+                    }
                     }
                 }
                 }
@@ -246,7 +304,7 @@ fun MainScreen(
             ChartDetailOverlay(state, track, r) { ChartDetail.open.value = null }
         }
         // Once, after updating: what's new in this version.
-        if (state.onboarded && state.seenWhatsNew < WHATS_NEW_VERSION) {
+        if (state.onboarded && state.seenWhatsNew < WHATS_NEW_VERSION && !Intro.active.value) {
             WhatsNewDialog { update { it.copy(seenWhatsNew = WHATS_NEW_VERSION) } }
         }
         AnimatedVisibility(

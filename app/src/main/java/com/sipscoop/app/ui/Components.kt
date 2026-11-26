@@ -1,5 +1,6 @@
 package com.sipscoop.app.ui
 
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.StartOffset
 import androidx.compose.animation.core.FastOutSlowInEasing
@@ -96,14 +97,16 @@ fun Btn3D(
     val shape = RoundedCornerShape(radius)
     // A filled colour button gets a matching edge; an outlined one keeps its line colour.
     val line = if (border == edge && face != C.Surface && face != C.Faint && face != C.Bg) face else border
+    val (origin, tap) = rememberTap(onClick)
     Column(
         modifier = modifier
+            .trackOrigin(origin)
             .graphicsLayer {
                 scaleX = scale
                 scaleY = scale
                 alpha = if (pressed && enabled) 0.88f else 1f
             }
-            .clickable(interactionSource = interaction, indication = null, enabled = enabled, onClick = onClick)
+            .clickable(interactionSource = interaction, indication = null, enabled = enabled, onClick = tap)
             .then(if (fill) Modifier.fillMaxWidth() else Modifier)
             .heightIn(min = minHeight + depth)
             .then(
@@ -139,13 +142,15 @@ fun SquishButton(
         animationSpec = tween(110),
         label = "squish"
     )
+    val (origin, tap) = rememberTap(onClick)
     Box(
         modifier
+            .trackOrigin(origin)
             .graphicsLayer {
                 scaleX = scale.value / 100f
                 scaleY = scale.value / 100f
             }
-            .clickable(interactionSource = interaction, indication = null, onClick = onClick)
+            .clickable(interactionSource = interaction, indication = null, onClick = tap)
             .then(
                 if (isNeutralGlass(background)) {
                     Modifier.glass(shape).then(
@@ -220,10 +225,12 @@ fun NumberField(
  */
 @Composable
 fun StreakBadge(days: Int, steps: Boolean, onClick: () -> Unit = {}) {
+    val (origin, tap) = rememberTap(onClick)
     Row(
         modifier = Modifier
+            .trackOrigin(origin)
             .clip(CircleShape)
-            .clickable(onClickLabel = if (steps) "Open step streak calendar" else "Open diet streak calendar", onClick = onClick)
+            .clickable(onClickLabel = if (steps) "Open step streak calendar" else "Open diet streak calendar", onClick = tap)
             .glass(CircleShape, tint = if (steps) C.Gold else C.Blue)
             .heightIn(min = 26.dp)
             .padding(start = 8.dp, end = 10.dp, top = 3.dp, bottom = 3.dp),
@@ -319,7 +326,8 @@ fun GreetingHeader(
         SquishButton(
             onClick = onProfile,
             background = C.Surface,
-            modifier = Modifier.padding(start = 4.dp),
+            // Profile opens as a circle growing out of this picture.
+            modifier = Modifier.padding(start = 4.dp).profileOrigin(),
             shape = RoundedCornerShape(50),
             borderColor = C.Line,
             contentPadding = PaddingValues(1.dp)
@@ -471,27 +479,69 @@ fun Popup(
     lockedCorner: (@Composable () -> Unit)? = null,
     content: @Composable ColumnScope.() -> Unit
 ) {
+    // Grows out of the button that opened it, and shrinks back into it when closed.
+    val origin = androidx.compose.runtime.remember { PopupOrigin.recent() }
+    val p = androidx.compose.runtime.remember { androidx.compose.animation.core.Animatable(0f) }
+    var closing by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
+    var after by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf<(() -> Unit)?>(null) }
+    androidx.compose.runtime.LaunchedEffect(closing) {
+        if (!closing) {
+            p.animateTo(1f, androidx.compose.animation.core.spring(dampingRatio = 0.82f, stiffness = 420f))
+        } else {
+            p.animateTo(0f, androidx.compose.animation.core.tween(220, easing = androidx.compose.animation.core.FastOutSlowInEasing))
+            (after ?: onDismiss)()
+            // If that action kept the pop-up open (say, a check failed), grow it back.
+            kotlinx.coroutines.delay(160)
+            closing = false
+        }
+    }
+    val close: (() -> Unit) -> Unit = { then -> if (!closing) { after = then; closing = true } }
     Dialog(
-        onDismissRequest = { if (closable) onDismiss() },
+        onDismissRequest = { if (closable) close(onDismiss) },
         properties = DialogProperties(
             usePlatformDefaultWidth = false,
             dismissOnBackPress = closable,
             dismissOnClickOutside = closable
         )
     ) {
-        GlassBlurBehind()
+        val view = androidx.compose.ui.platform.LocalView.current
+        GlassBlurBehind(amount = p.value.coerceIn(0f, 1f))
+        var card by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(androidx.compose.ui.geometry.Rect.Zero) }
+        androidx.compose.runtime.CompositionLocalProvider(LocalPopupClose provides close) {
         Box(
             Modifier
                 .padding(horizontal = 22.dp, vertical = 24.dp)
                 .widthIn(max = 420.dp)
                 .fillMaxWidth()
                 .wrapContentHeight()
+                .onGloballyPositioned { card = it.boundsOnScreen(view) }
+                .graphicsLayer {
+                    val k = p.value
+                    val o = origin
+                    if (o != null && card.width > 0f && card.height > 0f) {
+                        // From the button's size and spot to the card's own.
+                        scaleX = o.width / card.width + (1f - o.width / card.width) * k
+                        scaleY = o.height / card.height + (1f - o.height / card.height) * k
+                        translationX = (o.center.x - card.center.x) * (1f - k)
+                        translationY = (o.center.y - card.center.y) * (1f - k)
+                        alpha = (k * 5f).coerceIn(0f, 1f)
+                    } else {
+                        // Nothing to grow from (it opened by itself): a soft zoom from the middle.
+                        val sc = 0.86f + 0.14f * k
+                        scaleX = sc; scaleY = sc
+                        alpha = k.coerceIn(0f, 1f)
+                    }
+                    shape = RoundedCornerShape(24.dp)
+                    clip = true
+                }
                 .background(
                     Brush.verticalGradient(listOf(C.SheetTop, C.SheetBottom)),
                     RoundedCornerShape(24.dp)
                 )
                 .border(1.dp, glassEdge(C.Line), RoundedCornerShape(24.dp))
         ) {
+            // The contents fade in once the card is nearly full size.
+            Box(Modifier.graphicsLayer { alpha = ((p.value - 0.45f) / 0.55f).coerceIn(0f, 1f) }) {
             Column(
                 Modifier
                     .fillMaxWidth()
@@ -501,9 +551,10 @@ fun Popup(
                 verticalArrangement = Arrangement.spacedBy(12.dp),
                 content = content
             )
+            }
             if (closable) {
                 SquishButton(
-                    onClick = onDismiss,
+                    onClick = { close(onDismiss) },
                     background = C.Faint,
                     modifier = Modifier
                         .align(Alignment.TopEnd)
@@ -514,26 +565,32 @@ fun Popup(
                 Box(Modifier.align(Alignment.TopEnd).padding(top = 12.dp, end = 12.dp)) { lockedCorner() }
             }
         }
+        }
     }
 }
+
+/** Inside a pop-up: shrink it back into its button, then run the action. */
+val LocalPopupClose = androidx.compose.runtime.staticCompositionLocalOf<((() -> Unit) -> Unit)?> { null }
 
 /**
  * Frosts whatever is behind a pop-up (Android 12 and newer). Older phones simply show the
  * pop-up's own glass colour. Call it first thing inside a Dialog.
  */
 @Composable
-fun GlassBlurBehind(radius: Int = 48) {
+fun GlassBlurBehind(radius: Int = 48, amount: Float = 1f) {
     val view = androidx.compose.ui.platform.LocalView.current
     androidx.compose.runtime.SideEffect {
         val window = (view.parent as? androidx.compose.ui.window.DialogWindowProvider)?.window
-        // A deeper dim on every phone, so the frosted sheet stands out.
-        if (window != null && android.os.Build.VERSION.SDK_INT < 31) runCatching { window.setDimAmount(0.6f) }
+        // Our own grow animation replaces the system's pop-up animation.
+        runCatching { window?.setWindowAnimations(0) }
+        // A deeper dim on every phone, so the frosted sheet stands out. [amount] fades it in and out.
+        if (window != null && android.os.Build.VERSION.SDK_INT < 31) runCatching { window.setDimAmount(0.6f * amount) }
         if (window != null && android.os.Build.VERSION.SDK_INT >= 31) {
             runCatching {
-                window.setDimAmount(0.6f)
+                window.setDimAmount(0.6f * amount)
                 window.addFlags(android.view.WindowManager.LayoutParams.FLAG_BLUR_BEHIND)
                 val attrs = window.attributes
-                attrs.blurBehindRadius = radius
+                attrs.blurBehindRadius = (radius * amount).toInt()
                 window.attributes = attrs
             }
         }
@@ -543,8 +600,10 @@ fun GlassBlurBehind(radius: Int = 48) {
 /** The single wide main button at the bottom of a pop-up. */
 @Composable
 fun PopupButton(label: String, face: Color, edge: Color, enabled: Boolean = true, onClick: () -> Unit) {
+    val close = LocalPopupClose.current
     Btn3D(
-        onClick = onClick,
+        // The pop-up shrinks back into its button first, then the action runs.
+        onClick = { if (close != null) close(onClick) else onClick() },
         face = if (enabled) face else C.Grey,
         edge = if (enabled) edge else C.Line,
         enabled = enabled,

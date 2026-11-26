@@ -82,7 +82,11 @@ data class AppState(
     /** Tracker view: false = Classic (glass, bar, ring), true = Rings (one set of rings for all three). */
     val ringsView: Boolean = false,
     /** A thin, silent notification with today's steps. */
-    val stepNotify: Boolean = true
+    val stepNotify: Boolean = true,
+    /** The app's own text size (0.85 to 1.2). Used unless followPhoneText is on. */
+    val textScale: Float = 1f,
+    /** Use the phone's text size setting instead of textScale. */
+    val followPhoneText: Boolean = false
 ) {
     val waterTotal: Int get() = water.sumOf { it.amount }
     val proteinTotal: Int get() = protein.sumOf { it.amount }
@@ -484,6 +488,8 @@ object Store {
             .put("remindSteps", s.remindSteps)
             .put("ringsView", s.ringsView)
             .put("stepNotify", s.stepNotify)
+            .put("textScale", s.textScale.toDouble())
+            .put("followPhoneText", s.followPhoneText)
     }
 
     private fun fromJson(o: JSONObject): AppState {
@@ -548,7 +554,9 @@ object Store {
             stepLastAt = o.optLong("stepLastAt", 0),
             remindSteps = o.optBoolean("remindSteps", def.remindSteps),
             ringsView = o.optBoolean("ringsView", def.ringsView),
-            stepNotify = o.optBoolean("stepNotify", def.stepNotify)
+            stepNotify = o.optBoolean("stepNotify", def.stepNotify),
+            textScale = o.optDouble("textScale", def.textScale.toDouble()).toFloat().coerceIn(0.85f, 1.2f),
+            followPhoneText = o.optBoolean("followPhoneText", def.followPhoneText)
         )
     }
 }

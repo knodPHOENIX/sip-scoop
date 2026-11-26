@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.requiredHeight
 import androidx.compose.foundation.layout.requiredWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -147,11 +148,14 @@ private fun GrowOverlay(
                 .border(1.dp, tint.copy(alpha = 0.55f), shape)
                 .pointerInput(Unit) { detectTapGestures { } } // taps inside don't close it
         ) {
-            // Lay the content out at its final width, so it doesn't squash while growing.
+            // Lay the content out at its final size, so it doesn't squash while growing.
+            // Full screen also fixes the height: the detailed chart scrolls, and a scrolling
+            // list given no height limit crashes (that was the "tap a graph, app closes" bug).
             Box(
                 Modifier
                     .wrapContentSize(Alignment.TopStart, unbounded = true)
                     .requiredWidth(with(density) { target.width.toDp() })
+                    .then(if (fullScreen) Modifier.requiredHeight(with(density) { target.height.toDp() }) else Modifier)
             ) { content(t, close) }
         }
     }

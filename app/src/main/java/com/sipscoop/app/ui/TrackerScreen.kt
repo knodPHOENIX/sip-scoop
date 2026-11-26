@@ -710,13 +710,17 @@ private fun CalorieBar(total: Int, goal: Int, onEditGoal: () -> Unit, onAdd: () 
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(10.dp)
     ) {
+        val barOrigin = remember { OriginHolder() }
         Column(
             Modifier
                 .weight(1f)
+                .trackOrigin(barOrigin)
                 .semantics { contentDescription = "Calories ${fmt(total)} of ${fmt(goal)}. Hold to change your goal." }
                 .pointerInput(Unit) {
                     detectTapGestures(onLongPress = {
                         haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
+                        // The goal pop-up grows out of the bar.
+                        PopupOrigin.mark(barOrigin.rect)
                         onEditGoal()
                     })
                 }
