@@ -81,6 +81,102 @@
         </receiver>
 
         <receiver
+            android:name=".widget.OverviewWidget"
+            android:exported="false"
+            android:label="@string/widget_overview_name">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_overview_info" />
+        </receiver>
+
+        <receiver
+            android:name=".widget.ColumnsWidget"
+            android:exported="false"
+            android:label="@string/widget_columns_name">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_columns_info" />
+        </receiver>
+
+        <receiver
+            android:name=".widget.StripWidget"
+            android:exported="false"
+            android:label="@string/widget_strip_name">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_strip_info" />
+        </receiver>
+
+        <receiver
+            android:name=".widget.LargeWidget"
+            android:exported="false"
+            android:label="@string/widget_large_name">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_large_info" />
+        </receiver>
+
+        <receiver
+            android:name=".widget.RingsSmallWidget"
+            android:exported="false"
+            android:label="@string/widget_rings_small_name">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_rings_small_info" />
+        </receiver>
+
+        <receiver
+            android:name=".widget.WaterWidget"
+            android:exported="false"
+            android:label="@string/widget_water_name">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_water_info" />
+        </receiver>
+
+        <receiver
+            android:name=".widget.ProteinWidget"
+            android:exported="false"
+            android:label="@string/widget_protein_name">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_protein_info" />
+        </receiver>
+
+        <receiver
+            android:name=".widget.StepsWidget"
+            android:exported="false"
+            android:label="@string/widget_steps_name">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_steps_info" />
+        </receiver>
+
+        <receiver
             android:name=".widget.CompactWidget"
             android:exported="false"
             android:label="@string/widget_compact_name">

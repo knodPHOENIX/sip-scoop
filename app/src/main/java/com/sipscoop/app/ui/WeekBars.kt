@@ -88,6 +88,7 @@ fun WeekBars(state: AppState, track: Track, title: String, modifier: Modifier, s
 
     Column(
         modifier
+            .opensChart(track)
             .glass(RoundedCornerShape(18.dp))
             .padding(horizontal = 14.dp, vertical = 12.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)

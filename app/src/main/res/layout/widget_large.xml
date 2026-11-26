@@ -1,0 +1,273 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Large (4x3): rings, three rows, steps this week and buttons. -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/widget_glass"
+    android:padding="14dp">
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical">
+        <LinearLayout android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:gravity="center_vertical" android:orientation="horizontal">
+            <ImageView android:id="@+id/rings" android:layout_width="100dp" android:layout_height="100dp" android:contentDescription="@null" android:src="@drawable/widget_rings_preview" />
+            <LinearLayout android:layout_width="0dp" android:layout_height="match_parent" android:layout_marginStart="14dp" android:layout_weight="1" android:orientation="vertical">
+                <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp" android:layout_weight="1"
+        android:gravity="center_vertical"
+        android:orientation="vertical">
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+            <ImageView android:layout_width="13dp" android:layout_height="13dp" android:layout_marginEnd="7dp" android:src="@drawable/widget_ic_shoe" />
+            <TextView
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:fontFamily="sans-serif"
+        android:maxLines="1"
+        android:text="Steps"
+        android:textColor="@color/widget_muted"
+        android:textSize="13sp" android:layout_weight="1"/>
+            <TextView
+        android:id="@+id/steps_value"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:fontFamily="sans-serif-medium"
+        android:maxLines="1"
+        android:text="6,240"
+        android:textColor="@color/widget_ink"
+        android:textSize="17sp" android:textStyle="bold" />
+            <TextView
+        android:id="@+id/steps_goal"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:fontFamily="sans-serif"
+        android:maxLines="1"
+        android:text="/ 8,000"
+        android:textColor="@color/widget_faint"
+        android:textSize="12sp" android:layout_marginStart="4dp"/>
+        </LinearLayout>
+        <ProgressBar
+        android:id="@+id/steps_bar"
+        style="@android:style/Widget.ProgressBar.Horizontal"
+        android:layout_width="match_parent"
+        android:layout_height="6dp"
+        android:layout_marginTop="6dp"
+        android:max="100"
+        android:progress="65"
+        android:progressDrawable="@drawable/widget_bar_steps" />
+    </LinearLayout>
+                <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp" android:layout_weight="1"
+        android:gravity="center_vertical"
+        android:orientation="vertical">
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+            <ImageView android:layout_width="13dp" android:layout_height="13dp" android:layout_marginEnd="7dp" android:src="@drawable/widget_ic_drop" />
+            <TextView
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:fontFamily="sans-serif"
+        android:maxLines="1"
+        android:text="Water"
+        android:textColor="@color/widget_muted"
+        android:textSize="13sp" android:layout_weight="1"/>
+            <TextView
+        android:id="@+id/water_value"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:fontFamily="sans-serif-medium"
+        android:maxLines="1"
+        android:text="1.75"
+        android:textColor="@color/widget_ink"
+        android:textSize="17sp" android:textStyle="bold" />
+            <TextView
+        android:id="@+id/water_goal"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:fontFamily="sans-serif"
+        android:maxLines="1"
+        android:text="/ 3 L"
+        android:textColor="@color/widget_faint"
+        android:textSize="12sp" android:layout_marginStart="4dp"/>
+        </LinearLayout>
+        <ProgressBar
+        android:id="@+id/water_bar"
+        style="@android:style/Widget.ProgressBar.Horizontal"
+        android:layout_width="match_parent"
+        android:layout_height="6dp"
+        android:layout_marginTop="6dp"
+        android:max="100"
+        android:progress="65"
+        android:progressDrawable="@drawable/widget_bar_water" />
+    </LinearLayout>
+                <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp" android:layout_weight="1"
+        android:gravity="center_vertical"
+        android:orientation="vertical">
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+            <ImageView android:layout_width="13dp" android:layout_height="13dp" android:layout_marginEnd="7dp" android:src="@drawable/widget_ic_egg" />
+            <TextView
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:fontFamily="sans-serif"
+        android:maxLines="1"
+        android:text="Protein"
+        android:textColor="@color/widget_muted"
+        android:textSize="13sp" android:layout_weight="1"/>
+            <TextView
+        android:id="@+id/protein_value"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:fontFamily="sans-serif-medium"
+        android:maxLines="1"
+        android:text="84"
+        android:textColor="@color/widget_ink"
+        android:textSize="17sp" android:textStyle="bold" />
+            <TextView
+        android:id="@+id/protein_goal"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:fontFamily="sans-serif"
+        android:maxLines="1"
+        android:text="/ 120 g"
+        android:textColor="@color/widget_faint"
+        android:textSize="12sp" android:layout_marginStart="4dp"/>
+        </LinearLayout>
+        <ProgressBar
+        android:id="@+id/protein_bar"
+        style="@android:style/Widget.ProgressBar.Horizontal"
+        android:layout_width="match_parent"
+        android:layout_height="6dp"
+        android:layout_marginTop="6dp"
+        android:max="100"
+        android:progress="65"
+        android:progressDrawable="@drawable/widget_bar_protein" />
+    </LinearLayout>
+            </LinearLayout>
+        </LinearLayout>
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="10dp" android:orientation="horizontal">
+            <TextView
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:fontFamily="sans-serif-medium"
+        android:maxLines="1"
+        android:text="STEPS THIS WEEK"
+        android:textColor="@color/widget_muted"
+        android:textSize="11sp" android:textStyle="bold" android:layout_weight="1" android:letterSpacing="0.08"/>
+            <TextView
+        android:id="@+id/week_note"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:fontFamily="sans-serif"
+        android:maxLines="1"
+        android:text="5 of 7 days"
+        android:textColor="@color/widget_muted"
+        android:textSize="11sp" />
+        </LinearLayout>
+        <ImageView android:id="@+id/week_bars" android:layout_width="match_parent" android:layout_height="60dp" android:layout_marginTop="6dp" android:contentDescription="@null" android:scaleType="fitXY" />
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="3dp" android:orientation="horizontal">
+                <TextView
+        android:id="@+id/day0"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:fontFamily="sans-serif"
+        android:maxLines="1"
+        android:text="M"
+        android:textColor="@color/widget_faint"
+        android:textSize="10sp" android:layout_weight="1" android:gravity="center"/>
+                <TextView
+        android:id="@+id/day1"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:fontFamily="sans-serif"
+        android:maxLines="1"
+        android:text="T"
+        android:textColor="@color/widget_faint"
+        android:textSize="10sp" android:layout_weight="1" android:gravity="center"/>
+                <TextView
+        android:id="@+id/day2"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:fontFamily="sans-serif"
+        android:maxLines="1"
+        android:text="W"
+        android:textColor="@color/widget_faint"
+        android:textSize="10sp" android:layout_weight="1" android:gravity="center"/>
+                <TextView
+        android:id="@+id/day3"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:fontFamily="sans-serif"
+        android:maxLines="1"
+        android:text="T"
+        android:textColor="@color/widget_faint"
+        android:textSize="10sp" android:layout_weight="1" android:gravity="center"/>
+                <TextView
+        android:id="@+id/day4"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:fontFamily="sans-serif"
+        android:maxLines="1"
+        android:text="F"
+        android:textColor="@color/widget_faint"
+        android:textSize="10sp" android:layout_weight="1" android:gravity="center"/>
+                <TextView
+        android:id="@+id/day5"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:fontFamily="sans-serif"
+        android:maxLines="1"
+        android:text="S"
+        android:textColor="@color/widget_faint"
+        android:textSize="10sp" android:layout_weight="1" android:gravity="center"/>
+                <TextView
+        android:id="@+id/day6"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:fontFamily="sans-serif"
+        android:maxLines="1"
+        android:text="S"
+        android:textColor="@color/widget_faint"
+        android:textSize="10sp" android:layout_weight="1" android:gravity="center"/>
+        </LinearLayout>
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="10dp" android:orientation="horizontal">
+            <TextView
+        android:id="@+id/water_add"
+        android:layout_width="0dp"
+        android:layout_height="32dp" android:layout_weight="1" android:layout_marginEnd="6dp"
+        android:background="@drawable/widget_pill_water"
+        android:fontFamily="sans-serif-medium"
+        android:gravity="center"
+        android:maxLines="1"
+        android:text="+250 ml"
+        android:textColor="#FFFFFF"
+        android:textSize="13sp" />
+            <TextView
+        android:id="@+id/protein_add"
+        android:layout_width="0dp"
+        android:layout_height="32dp" android:layout_weight="1" android:layout_marginEnd="6dp"
+        android:background="@drawable/widget_pill_protein"
+        android:fontFamily="sans-serif-medium"
+        android:gravity="center"
+        android:maxLines="1"
+        android:text="+10 g"
+        android:textColor="#FFFFFF"
+        android:textSize="13sp" />
+            <TextView android:id="@+id/open_app" android:layout_width="0dp" android:layout_height="32dp" android:layout_weight="1" android:background="@drawable/widget_pill_neutral" android:fontFamily="sans-serif-medium" android:gravity="center" android:text="Open app" android:textColor="@color/widget_ink" android:textSize="13sp" />
+        </LinearLayout>
+    </LinearLayout>
+</FrameLayout>

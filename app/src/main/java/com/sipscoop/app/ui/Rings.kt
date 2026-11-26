@@ -32,6 +32,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.boundsInRoot
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
@@ -144,7 +147,14 @@ fun SharedRings(state: AppState, position: Float, stepsOn: Boolean, onPick: (Int
 
 /** Today's numbers under the rings, each in its own colour: 6,240 · 1,750 ml · 84 g. Tap to jump. */
 @Composable
-fun RingChips(state: AppState, position: Float, stepsOn: Boolean, onPick: (Int) -> Unit) {
+fun RingChips(
+    state: AppState,
+    position: Float,
+    stepsOn: Boolean,
+    onHold: (Int, androidx.compose.ui.geometry.Rect) -> Unit = { _, _ -> },
+    onPick: (Int) -> Unit
+) {
+    val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
     val current = kotlin.math.round(position.coerceIn(0f, 2f)).toInt()
     val names = listOf("Steps", "Water", "Protein")
     val dots = listOf(C.Gold, C.Blue, C.Orange)
@@ -162,20 +172,35 @@ fun RingChips(state: AppState, position: Float, stepsOn: Boolean, onPick: (Int) 
             val on = i == current
             // The chip of the page you're on is a little brighter.
             val strength by animateFloatAsState(if (on) 1f else 0f, tween(300), label = "chipOn")
+            var bounds by remember { mutableStateOf(androidx.compose.ui.geometry.Rect.Zero) }
             Row(
                 Modifier
                     .weight(1f)
-                    .semantics { contentDescription = "$name ${values[i]}" }
+                    .onGloballyPositioned { bounds = it.boundsInRoot() }
+                    .semantics { contentDescription = if (i == 0) "$name ${values[i]}" else "$name ${values[i]}. Hold to edit." }
                     .glass(CircleShape, tint = accents[i].face)
                     .border(1.dp, dots[i].copy(alpha = 0.28f + 0.42f * strength), CircleShape)
                     .background(accents[i].face.copy(alpha = 0.10f * strength), CircleShape)
-                    .clickable { onPick(i) }
+                    .clip(CircleShape)
+                    .pointerInput(i) {
+                        detectTapGestures(
+                            onTap = { onPick(i) },
+                            // Water and protein: hold to open their edits (the chip grows open).
+                            onLongPress = {
+                                if (i > 0) {
+                                    haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
+                                    onHold(i, bounds)
+                                }
+                            }
+                        )
+                    }
                     .padding(horizontal = 6.dp, vertical = 7.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally)
             ) {
                 Box(Modifier.size(7.dp).background(dots[i], CircleShape))
                 Text(values[i], style = T.bold(13, accents[i].text), maxLines = 1, softWrap = false)
+                if (i > 0) LineIcon(Ic.PENCIL, accents[i].text.copy(alpha = 0.75f), 11.dp, 2f)
             }
         }
     }

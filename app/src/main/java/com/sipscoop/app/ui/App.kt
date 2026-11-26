@@ -120,6 +120,8 @@ fun MainScreen(
 ) {
     var page by rememberSaveable { mutableIntStateOf(HOME) }
     var calendar by remember { mutableStateOf<String?>(null) }
+    // Water or protein chip held: it grows into its edit menu.
+    var chipMenu by remember { mutableStateOf<Pair<Int, androidx.compose.ui.geometry.Rect>?>(null) }
     // Steps first, then water, then protein.
     val pager = rememberPagerState(pageCount = { 3 })
     val scope = rememberCoroutineScope()
@@ -193,7 +195,13 @@ fun MainScreen(
                             )
                         }
                         Spacer(Modifier.height(6.dp))
-                        RingChips(state, pos, stepStatus == StepStatus.ON) { i -> scope.launch { pager.animateScrollToPage(i) } }
+                        RingChips(
+                            state, pos, stepStatus == StepStatus.ON,
+                            onHold = { i, r ->
+                                chipMenu = i to r
+                                scope.launch { pager.animateScrollToPage(i) }
+                            }
+                        ) { i -> scope.launch { pager.animateScrollToPage(i) } }
                         Spacer(Modifier.height(10.dp))
                     } else {
                         PageDots(pos)
@@ -230,6 +238,12 @@ fun MainScreen(
         }
         calendar?.let { kind ->
             StreakCalendarDialog(state, steps = kind == "steps") { calendar = null }
+        }
+        chipMenu?.let { (i, r) ->
+            ChipEditMenu(state, i, r) { chipMenu = null }
+        }
+        ChartDetail.open.value?.let { (track, r) ->
+            ChartDetailOverlay(state, track, r) { ChartDetail.open.value = null }
         }
         // Once, after updating: what's new in this version.
         if (state.onboarded && state.seenWhatsNew < WHATS_NEW_VERSION) {

@@ -121,6 +121,18 @@ fun TrackerScreen(
     var showKcalAdd by remember { mutableStateOf(false) }
     var editEntry by remember { mutableStateOf<Entry?>(null) }
     var showEditAll by remember { mutableStateOf(false) }
+    // The chip menu under the rings asks this page to open one of its edits.
+    val request = TrackerEdits.request.value
+    LaunchedEffect(request) {
+        if (request != null && request.first == kind) {
+            when (request.second) {
+                EditAction.GOAL -> showGoal = true
+                EditAction.TODAY -> showEditAll = true
+                EditAction.AMOUNTS -> editing = true
+            }
+            TrackerEdits.request.value = null
+        }
+    }
     var limitMsg by remember { mutableStateOf<String?>(null) }
     var limitKey by remember { mutableIntStateOf(0) }
     val room = if (isWater) state.waterRoom else state.proteinRoom
@@ -212,14 +224,7 @@ fun TrackerScreen(
         }
 
         if (compact) {
-            Box(Modifier.fillMaxWidth()) {
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    WidePill(if (isWater) "Goal ${liters(goal)}" else "Goal $goal g", accent, Modifier.weight(1f)) { showGoal = true }
-                    WidePill("Edit today", accent, Modifier.weight(1f)) { showEditAll = true }
-                    WidePill(if (editing) "Done" else "Edit amounts", accent, Modifier.weight(1f)) { editing = !editing }
-                }
-                PopLayer(pops, accent.text, Modifier.align(Alignment.TopCenter).fillMaxWidth().height(40.dp))
-            }
+            // Rings view: goal and edits open from the chip under the rings (hold it).
         } else if (isWater) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -288,15 +293,26 @@ fun TrackerScreen(
         }
 
         // Quick add
+        Box {
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            if (compact && editing) {
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                    SectionLabel("Edit amounts")
+                    Pill("Done", accent) { editing = false }
+                }
+            }
             if (!compact) {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                     SectionLabel("Quick add")
                     Pill(if (editing) "Done" else "Edit amounts", accent) { editing = !editing }
                 }
             }
-            val cols = if (isWater) 2 else 4
-            val cells = quick.indices.toList() + listOf(-1)
+            // Rings view, water: three small buttons in one line (+100 ml, +250 ml, Custom).
+            val slim = compact && isWater
+            val cols = if (slim) 3 else if (isWater) 2 else 4
+            val cells = if (slim) listOf(2, 0).filter { it in quick.indices } + listOf(-1)
+            else quick.indices.toList() + listOf(-1)
+            val tall = isWater && !slim
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 cells.chunked(cols).forEach { row ->
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -306,12 +322,12 @@ fun TrackerScreen(
                                     idx == -1 -> Btn3D(
                                         onClick = { showCustom = true },
                                         face = accent.card, edge = accent.line, border = accent.line,
-                                        minHeight = if (isWater) 62.dp else 50.dp,
-                                        horizontalAlignment = if (isWater) Alignment.Start else Alignment.CenterHorizontally,
-                                        contentPadding = if (isWater) PaddingValues(horizontal = 16.dp, vertical = 8.dp) else PaddingValues(4.dp)
+                                        minHeight = if (tall) 62.dp else 50.dp,
+                                        horizontalAlignment = if (tall) Alignment.Start else Alignment.CenterHorizontally,
+                                        contentPadding = if (tall) PaddingValues(horizontal = 16.dp, vertical = 8.dp) else PaddingValues(4.dp)
                                     ) {
-                                        Text("Custom", style = T.display(if (isWater) 22 else 17))
-                                        if (isWater) Text("Type an amount", style = T.bold(13, C.Muted))
+                                        Text("Custom", style = T.display(if (tall) 22 else 17), maxLines = 1)
+                                        if (tall) Text("Type an amount", style = T.bold(13, C.Muted))
                                     }
                                     editing -> InlineNumber(
                                         value = quick[idx], unit = unit, accent = accent, max = Limits.max(isWater),
@@ -325,16 +341,16 @@ fun TrackerScreen(
                                             onClick = { add(v) },
                                             face = if (primary) accent.face else C.Surface,
                                             edge = if (primary) accent.edge else accent.line,
-                                            minHeight = if (isWater) 62.dp else 50.dp,
-                                            horizontalAlignment = if (isWater) Alignment.Start else Alignment.CenterHorizontally,
-                                            contentPadding = if (isWater) PaddingValues(horizontal = 16.dp, vertical = 8.dp) else PaddingValues(4.dp)
+                                            minHeight = if (tall) 62.dp else 50.dp,
+                                            horizontalAlignment = if (tall) Alignment.Start else Alignment.CenterHorizontally,
+                                            contentPadding = if (tall) PaddingValues(horizontal = 16.dp, vertical = 8.dp) else PaddingValues(4.dp)
                                         ) {
                                             Text(
                                                 "+$v $unit",
-                                                style = T.display(if (isWater) 22 else 19, if (primary) Color.White else accent.text),
+                                                style = T.display(if (tall) 22 else if (slim) 17 else 19, if (primary) Color.White else accent.text),
                                                 maxLines = 1
                                             )
-                                            if (isWater) {
+                                            if (tall) {
                                                 Text(
                                                     WATER_LABELS.getOrElse(idx) { "Quick" },
                                                     style = T.bold(13, if (primary) Color(0xFFE6F5FE) else C.Muted)
@@ -349,6 +365,8 @@ fun TrackerScreen(
                     }
                 }
             }
+        }
+        if (compact) PopLayer(pops, accent.text, Modifier.align(Alignment.TopCenter).fillMaxWidth().height(40.dp))
         }
 
         if (isWater && !compact) SwipeHint()

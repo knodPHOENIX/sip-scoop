@@ -1,12 +1,28 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Sip &amp; Scoop</string>
-    <string name="widget_wide_name">Sip &amp; Scoop · wide</string>
-    <string name="widget_compact_name">Sip &amp; Scoop · compact</string>
+    <string name="widget_wide_name">Sip &amp; Scoop · big rings</string>
+    <string name="widget_compact_name">Sip &amp; Scoop · small bars</string>
     <string name="widget_wide_desc">Steps, water and protein, with one-tap logging</string>
     <string name="widget_compact_desc">Steps, water and protein at a glance</string>
     <string name="water">Water</string>
     <string name="protein">Protein</string>
+    <string name="widget_overview_name">Sip &amp; Scoop · overview</string>
+    <string name="widget_overview_desc">Rings and today\'s steps, water and protein. Info only.</string>
+    <string name="widget_columns_name">Sip &amp; Scoop · three columns</string>
+    <string name="widget_columns_desc">A ring, number and button each for steps, water and protein</string>
+    <string name="widget_strip_name">Sip &amp; Scoop · strip</string>
+    <string name="widget_strip_desc">A thin row of rings and numbers with two buttons</string>
+    <string name="widget_large_name">Sip &amp; Scoop · large</string>
+    <string name="widget_large_desc">Everything for today plus this week\'s steps</string>
+    <string name="widget_rings_small_name">Sip &amp; Scoop · small rings</string>
+    <string name="widget_rings_small_desc">The rings with all three numbers</string>
+    <string name="widget_water_name">Sip &amp; Scoop · water</string>
+    <string name="widget_water_desc">Water today with two quick buttons</string>
+    <string name="widget_protein_name">Sip &amp; Scoop · protein</string>
+    <string name="widget_protein_desc">Protein and calories today with two quick buttons</string>
+    <string name="widget_steps_name">Sip &amp; Scoop · steps</string>
+    <string name="widget_steps_desc">Steps today with distance and calories</string>
     <string name="widget_done_title">All goals done today</string>
     <string name="widget_done_short">All done today</string>
     <string name="widget_done_sub">See you tomorrow</string>

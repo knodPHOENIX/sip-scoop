@@ -200,9 +200,14 @@ private fun StepsToday(state: AppState, update: ((AppState) -> AppState) -> Unit
             FactTile(Modifier.weight(1f), "${walks.sumOf { it.minutes }} min", "Active walking")
         }
 
-        DayPicker(today, back) { back = it }
-
-        ActivityChart(state, hours, back, day)
+        if (compact) {
+            // Rings view: the chart comes first (a little shorter), then the day picker.
+            ActivityChart(state, hours, back, day, chartHeight = 112.dp)
+            DayPicker(today, back) { back = it }
+        } else {
+            DayPicker(today, back) { back = it }
+            ActivityChart(state, hours, back, day)
+        }
 
         WalksCard(walks, if (back == 0) "Walks today" else "Walks on ${shortDay(day)}")
 
@@ -354,7 +359,7 @@ private fun DayPicker(today: LocalDate, back: Int, onPick: (Int) -> Unit) {
 
 /** Steps by hour (when you walked) or the last 7 days. Tap an hour to see its number. */
 @Composable
-private fun ActivityChart(state: AppState, hours: IntArray, back: Int, day: LocalDate) {
+private fun ActivityChart(state: AppState, hours: IntArray, back: Int, day: LocalDate, chartHeight: androidx.compose.ui.unit.Dp = 140.dp) {
     var byHour by remember { mutableStateOf(true) }
     // Show from 6 AM, or earlier if there were steps earlier.
     val first = minOf(6, hours.indexOfFirst { it > 0 }.takeIf { it >= 0 } ?: 6)
@@ -366,6 +371,7 @@ private fun ActivityChart(state: AppState, hours: IntArray, back: Int, day: Loca
     Column(
         Modifier
             .fillMaxWidth()
+            .opensChart(Track.STEPS)
             .glass(RoundedCornerShape(18.dp))
             .padding(14.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp)
@@ -412,7 +418,7 @@ private fun ActivityChart(state: AppState, hours: IntArray, back: Int, day: Loca
             Row(
                 Modifier
                     .fillMaxWidth()
-                    .height(140.dp),
+                    .height(chartHeight),
                 horizontalArrangement = Arrangement.spacedBy(3.dp),
                 verticalAlignment = Alignment.Bottom
             ) {

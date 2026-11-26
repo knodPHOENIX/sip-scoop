@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Three columns (4x2): a ring, number and button for each. -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/widget_glass"
+    android:padding="12dp">
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="horizontal">
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:orientation="vertical">
+            <FrameLayout android:layout_width="60dp" android:layout_height="60dp">
+                <ImageView android:id="@+id/ring_steps" android:layout_width="60dp" android:layout_height="60dp" android:contentDescription="@null" android:src="@drawable/widget_ring_steps" />
+                <TextView
+        android:id="@+id/steps_pct"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:fontFamily="sans-serif-medium"
+        android:maxLines="1"
+        android:text="70%"
+        android:textColor="@color/widget_gold"
+        android:textSize="12sp" android:textStyle="bold" android:layout_gravity="center"/>
+            </FrameLayout>
+            <TextView
+        android:id="@+id/steps_value"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:fontFamily="sans-serif-medium"
+        android:maxLines="1"
+        android:text="6,240"
+        android:textColor="@color/widget_ink"
+        android:textSize="17sp" android:textStyle="bold" android:layout_marginTop="6dp"/>
+            <TextView
+        android:id="@+id/steps_goal"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:fontFamily="sans-serif"
+        android:maxLines="1"
+        android:text="of 8,000"
+        android:textColor="@color/widget_muted"
+        android:textSize="11sp" />
+            <TextView
+        android:id="@+id/steps_km"
+        android:layout_width="wrap_content"
+        
+        android:fontFamily="sans-serif"
+        android:maxLines="1"
+        android:text="4.7 km"
+        android:textColor="@color/widget_muted"
+        android:textSize="12sp" android:layout_marginTop="6dp" android:layout_height="28dp" android:gravity="center"/>
+        </LinearLayout>
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:orientation="vertical">
+            <FrameLayout android:layout_width="60dp" android:layout_height="60dp">
+                <ImageView android:id="@+id/ring_water" android:layout_width="60dp" android:layout_height="60dp" android:contentDescription="@null" android:src="@drawable/widget_ring_water" />
+                <TextView
+        android:id="@+id/water_pct"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:fontFamily="sans-serif-medium"
+        android:maxLines="1"
+        android:text="70%"
+        android:textColor="@color/widget_blue"
+        android:textSize="12sp" android:textStyle="bold" android:layout_gravity="center"/>
+            </FrameLayout>
+            <TextView
+        android:id="@+id/water_value"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:fontFamily="sans-serif-medium"
+        android:maxLines="1"
+        android:text="1.75"
+        android:textColor="@color/widget_ink"
+        android:textSize="17sp" android:textStyle="bold" android:layout_marginTop="6dp"/>
+            <TextView
+        android:id="@+id/water_goal"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:fontFamily="sans-serif"
+        android:maxLines="1"
+        android:text="of 8,000"
+        android:textColor="@color/widget_muted"
+        android:textSize="11sp" />
+            <TextView android:layout_marginTop="6dp" android:layout_marginStart="4dp" android:layout_marginEnd="4dp"
+        android:id="@+id/water_add"
+        android:layout_width="match_parent"
+        android:layout_height="28dp"
+        android:background="@drawable/widget_pill_water"
+        android:fontFamily="sans-serif-medium"
+        android:gravity="center"
+        android:maxLines="1"
+        android:text="+250"
+        android:textColor="#FFFFFF"
+        android:textSize="13sp" />
+        </LinearLayout>
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:orientation="vertical">
+            <FrameLayout android:layout_width="60dp" android:layout_height="60dp">
+                <ImageView android:id="@+id/ring_protein" android:layout_width="60dp" android:layout_height="60dp" android:contentDescription="@null" android:src="@drawable/widget_ring_protein" />
+                <TextView
+        android:id="@+id/protein_pct"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:fontFamily="sans-serif-medium"
+        android:maxLines="1"
+        android:text="70%"
+        android:textColor="@color/widget_orange"
+        android:textSize="12sp" android:textStyle="bold" android:layout_gravity="center"/>
+            </FrameLayout>
+            <TextView
+        android:id="@+id/protein_value"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:fontFamily="sans-serif-medium"
+        android:maxLines="1"
+        android:text="84"
+        android:textColor="@color/widget_ink"
+        android:textSize="17sp" android:textStyle="bold" android:layout_marginTop="6dp"/>
+            <TextView
+        android:id="@+id/protein_goal"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:fontFamily="sans-serif"
+        android:maxLines="1"
+        android:text="of 8,000"
+        android:textColor="@color/widget_muted"
+        android:textSize="11sp" />
+            <TextView android:layout_marginTop="6dp" android:layout_marginStart="4dp" android:layout_marginEnd="4dp"
+        android:id="@+id/protein_add"
+        android:layout_width="match_parent"
+        android:layout_height="28dp"
+        android:background="@drawable/widget_pill_protein"
+        android:fontFamily="sans-serif-medium"
+        android:gravity="center"
+        android:maxLines="1"
+        android:text="+10 g"
+        android:textColor="#FFFFFF"
+        android:textSize="13sp" />
+        </LinearLayout>
+    </LinearLayout>
+</FrameLayout>
